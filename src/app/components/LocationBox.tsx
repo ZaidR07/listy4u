@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-
-import { useDispatch } from "react-redux";
+import { useEffect, useState } from "react";
+import axiosInstance from "@/lib/axios";
 
 const LocationBox = ({ locationstate, setlocation }) => {
   const [filter, setFilter] = useState("");
+  const [locations, setLocations] = useState<string[]>([]);
 
   const LocationIcon = () => (
     <svg
@@ -18,226 +18,66 @@ const LocationBox = ({ locationstate, setlocation }) => {
     </svg>
   );
 
-  const dispatch = useDispatch();
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const response = await axiosInstance.get('/api/getspecificvariable', {
+          params: { category: "locationlist" },
+        });
+        if (response.status === 200) {
+          setLocations(response.data.payload || []);
+        } else {
+          setLocations([]);
+        }
+      } catch (e) {
+        setLocations([]);
+      }
+    };
+    loadLocations();
+  }, []);
 
-  const stations = [
-    {
-      line: "Western Line",
-      stations: [
-        "Churchgate",
-        "Marine Lines",
-        "Charni Road",
-        "Grant Road",
-        "Mumbai Central",
-        "Mahalaxmi",
-        "Lower Parel",
-        "Prabhadevi",
-        "Dadar",
-        "Matunga Road",
-        "Mahim Junction",
-        "Bandra",
-        "Khar Road",
-        "Santacruz",
-        "Vile Parle",
-        "Andheri",
-        "Jogeshwari",
-        "Ram Mandir",
-        "Goregaon",
-        "Malad",
-        "Kandivali",
-        "Borivali",
-        "Dahisar",
-        "Mira Road",
-        "Bhayandar",
-        "Naigaon",
-        "Vasai Road",
-        "Nallasopara",
-        "Virar",
-        "Vaitarna",
-        "Saphale",
-        "Kelve Road",
-        "Palghar",
-        "Umroli",
-        "Boisar",
-        "Vangaon",
-        "Dahanu Road",
-      ],
-    },
-    {
-      line: "Central Line",
-      stations: [
-        "Chhatrapati Shivaji Maharaj Terminus (CSMT)",
-        "Masjid",
-        "Sandhurst Road",
-        "Byculla",
-        "Chinchpokli",
-        "Currey Road",
-        "Parel",
-        "Dadar",
-        "Matunga",
-        "Sion",
-        "Kurla",
-        "Vidyavihar",
-        "Ghatkopar",
-        "Vikhroli",
-        "Kanjurmarg",
-        "Bhandup",
-        "Nahur",
-        "Mulund",
-        "Thane",
-        "Kalwa",
-        "Mumbra",
-        "Diva Junction",
-        "Dombivli",
-        "Thakurli",
-        "Kalyan Junction",
-        "Vithalwadi",
-        "Ulhasnagar",
-        "Ambernath",
-        "Badlapur",
-        "Vangani",
-        "Shelu",
-        "Neral",
-        "Bhivpuri Road",
-        "Karjat",
-        "Palasdhari",
-        "Kelavli",
-        "Dolavli",
-        "Lowjee",
-        "Khopoli",
-        "Shahad",
-        "Ambivli",
-        "Titwala",
-        "Khadavli",
-        "Vasind",
-        "Asangaon",
-        "Atgaon",
-        "Thansit",
-        "Khardi",
-        "Umbermali",
-        "Kasara",
-      ],
-    },
-    {
-      line: "Harbour Line",
-      stations: [
-        "Chhatrapati Shivaji Maharaj Terminus (CSMT)",
-        "Masjid",
-        "Sandhurst Road",
-        "Dockyard Road",
-        "Reay Road",
-        "Cotton Green",
-        "Sewri",
-        "Vadala Road",
-        "King's Circle",
-        "Mahim Junction",
-        "Bandra",
-        "Khar Road",
-        "Santacruz",
-        "Vile Parle",
-        "Andheri",
-        "Jogeshwari",
-        "Ram Mandir",
-        "Goregaon",
-        "GTB Nagar",
-        "Chunabhatti",
-        "Kurla",
-        "Tilak Nagar",
-        "Chembur",
-        "Govandi",
-        "Mankhurd",
-        "Vashi",
-        "Sanpada",
-        "Juinagar",
-        "Nerul",
-        "Seawoods-Darave",
-        "CBD Belapur",
-        "Kharghar",
-        "Mansarovar",
-        "Khandeshwar",
-        "Panvel",
-      ],
-    },
-    {
-      line: "Trans-Harbour Line",
-      stations: [
-        "Thane",
-        "Airoli",
-        "Rabale",
-        "Ghansoli",
-        "Koparkhairane",
-        "Turbhe",
-        "Sanpada",
-        "Vashi",
-        "Juinagar",
-        "Nerul",
-        "Seawoods-Darave",
-        "CBD Belapur",
-        "Kharghar",
-        "Bamandongri",
-        "Kharkopar",
-      ],
-    },
-    {
-      line: "Nerul-Uran Line",
-      stations: ["Nerul", "Seawoods-Darave", "Bamandongri", "Kharkopar"],
-    },
-  ];
+  const filteredLocations = locations.filter((loc) =>
+    (loc || "").toLowerCase().includes(filter.toLowerCase())
+  );
 
-  const filteredStations = stations
-    .map((line) => ({
-      line: line.line,
-      stations: line.stations.filter((station) =>
-        station.toLowerCase().includes(filter.toLowerCase())
-      ),
-    }))
-    .filter((line) => line.stations.length > 0);
-
-  const handleSetLocation = (station) => {
-    setFilter(""); // Clear filter after selection
-    dispatch(setlocation(station));
+  const handleSetLocation = (loc: string) => {
+    console.log("Set Location clicked:", loc, typeof setlocation);
+    setFilter("");
+    setlocation(loc);
   };
 
   return (
     <div
-      className={`flex flex-col gap-4 w-[70%] lg:w-[20%] bg-white fixed z-[99999999999999999999999999999999] lg:top-[25vh] top-[45vh] left-[15%] lg:left-[40%] p-4 rounded-lg shadow-lg ${
-        locationstate != "" ? "hidden" : "block"
-      }`}
+      className={`flex flex-col gap-4 w-[70%] lg:w-[20%] bg-white fixed z-[99999999999999999999999999999999] lg:top-[25vh] top-[45vh] left-[15%] lg:left-[40%] p-4 rounded-lg shadow-lg ${locationstate != "" ? "hidden" : "block"
+        }`}
     >
       <div className="flex items-center gap-4">
         <input
           type="text"
-          placeholder="Filter stations..."
+          placeholder="Filter locations..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="w-full p-2 border rounded-md text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
       </div>
       <div className="max-h-48 overflow-y-auto border rounded-md">
-        {filteredStations.length > 0 ? (
-          filteredStations.map((line, index) => (
-            <div key={index}>
-              <div className="px-2 py-1 text-sm font-semibold text-gray-600 bg-gray-100">
-                {line.line}
-              </div>
-              {line.stations.map((station, stationIndex) => (
-                <div
-                  key={`${index}-${stationIndex}`}
-                  className="flex items-center justify-between px-2 py-1 hover:bg-gray-50"
-                >
-                  <span className="text-gray-700">{station}</span>
-                  <button
-                    onClick={() => handleSetLocation(station)}
-                    className="px-2 py-1 text-sm text-white bg-orange-500 rounded hover:bg-orange-600"
-                  >
-                    Set Location
-                  </button>
-                </div>
-              ))}
+        {filteredLocations.length > 0 ? (
+          filteredLocations.map((loc, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between px-2 py-1 hover:bg-gray-50"
+            >
+              <span className="text-gray-700">{loc}</span>
+              <button
+                onClick={() => handleSetLocation(loc)}
+                className="px-2 py-1 text-sm text-white bg-orange-500 rounded hover:bg-orange-600"
+              >
+                Set Location
+              </button>
             </div>
           ))
         ) : (
-          <div className="px-2 py-1 text-gray-500">No stations found</div>
+          <div className="px-2 py-1 text-gray-500">No locations found</div>
         )}
       </div>
     </div>

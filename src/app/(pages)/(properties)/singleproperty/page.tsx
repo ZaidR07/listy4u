@@ -105,6 +105,7 @@ const PropertyDetails = () => {
   });
   const [loading, setLoading] = useState(true);
   const [imageViewer, setImageViewer] = useState({ open: false, index: 0 });
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [propertieslist, setPropertieslist] = useState([
     {
       Societyname: "",
@@ -400,10 +401,66 @@ const PropertyDetails = () => {
         <div className="pb-12">
           {/* Image Gallery */}
           <div className="mx-[2%] lg:mx-[4%] mt-[10vh] lg:mt-[8vh] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3 h-[40vh] lg:h-[60vh]">
+            {/* Mobile Carousel - Single Image */}
+            <div className="lg:hidden relative h-[40vh]">
+              <div
+                className="cursor-pointer relative group overflow-hidden rounded-lg h-full"
+                onClick={() => openImageViewer(currentSlide)}
+              >
+                <img
+                  className="object-cover w-full h-full"
+                  src={images[currentSlide]}
+                  alt={`Property Image ${currentSlide + 1}`}
+                />
+                {/* Navigation Arrows */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentSlide((prev) => (prev - 1 + images.length) % images.length);
+                  }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-lg transition-all z-10"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentSlide((prev) => (prev + 1) % images.length);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-lg transition-all z-10"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z" />
+                  </svg>
+                </button>
+              </div>
+              {/* Dots Indicator */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentSlide(index);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      index === currentSlide
+                        ? 'bg-white w-6'
+                        : 'bg-white/50 hover:bg-white/75'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Grid - Multiple Images */}
+            <div className="hidden lg:grid grid-cols-4 gap-3 h-[60vh]">
               {/* First Image */}
               <div
-                className="cursor-pointer relative group overflow-hidden rounded-lg lg:rounded-none"
+                className="cursor-pointer relative group overflow-hidden"
                 onClick={() => openImageViewer(0)}
               >
                 <img
@@ -431,7 +488,7 @@ const PropertyDetails = () => {
 
               {/* Second Image */}
               <div
-                className="cursor-pointer relative group overflow-hidden rounded-lg lg:rounded-none"
+                className="cursor-pointer relative group overflow-hidden"
                 onClick={() => openImageViewer(1)}
               >
                 <img
@@ -442,9 +499,9 @@ const PropertyDetails = () => {
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
               </div>
 
-              {/* Third Image - Hidden on mobile, visible on desktop */}
+              {/* Third Image */}
               <div
-                className="hidden lg:block cursor-pointer relative group overflow-hidden"
+                className="cursor-pointer relative group overflow-hidden"
                 onClick={() => openImageViewer(2)}
               >
                 <img
@@ -455,9 +512,9 @@ const PropertyDetails = () => {
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
               </div>
 
-              {/* Fourth Image - Hidden on mobile, visible on desktop */}
+              {/* Fourth Image */}
               <div
-                className="hidden lg:block cursor-pointer relative group overflow-hidden"
+                className="cursor-pointer relative group overflow-hidden"
                 onClick={() => openImageViewer(3)}
               >
                 {isUser && (
@@ -484,7 +541,7 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* Mobile: Heart button overlay for first image */}
+            {/* Mobile: Heart button overlay */}
             {isUser && (
               <button
                 onClick={handleToggleWishlist}
@@ -521,38 +578,38 @@ const PropertyDetails = () => {
             </div>
 
             {/* Key Stats Card */}
-            <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 text-white p-6 lg:p-8 rounded-3xl shadow-2xl mb-8 border border-orange-400/30">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-                <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-4 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
-                  <div className="flex justify-center mb-3">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      <RupeeIcon width={windowwidth < 800 ? 28 : 36} fill="#FFF" />
+            <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 text-white p-4 lg:p-8 rounded-3xl shadow-2xl mb-8 border border-orange-400/30">
+              <div className="grid grid-cols-3 lg:grid-cols-3 gap-3 lg:gap-6">
+                <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
+                  <div className="flex justify-center mb-2">
+                    <div className="bg-white/20 p-2 lg:p-3 rounded-full">
+                      <RupeeIcon width={windowwidth < 800 ? 20 : 36} fill="#FFF" />
                     </div>
                   </div>
-                  <div className="text-sm font-medium opacity-90 mb-2 uppercase tracking-wide">Price</div>
-                  <div className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">
+                  <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Price</div>
+                  <div className="text-sm md:text-xl lg:text-3xl font-bold leading-tight">
                     {priceconverter(property.price)}
                   </div>
                 </div>
-                <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-4 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
-                  <div className="flex justify-center mb-3">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      <RulerIcon width={windowwidth < 800 ? 28 : 36} fill="#FFF" />
+                <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
+                  <div className="flex justify-center mb-2">
+                    <div className="bg-white/20 p-2 lg:p-3 rounded-full">
+                      <RulerIcon width={windowwidth < 800 ? 20 : 36} fill="#FFF" />
                     </div>
                   </div>
-                  <div className="text-sm font-medium opacity-90 mb-2 uppercase tracking-wide">Area</div>
-                  <div className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">
+                  <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Area</div>
+                  <div className="text-sm md:text-xl lg:text-3xl font-bold leading-tight">
                     {`${property.area} ${property.areaunits}`}
                   </div>
                 </div>
-                <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-4 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
-                  <div className="flex justify-center mb-3">
-                    <div className="bg-white/20 p-3 rounded-full">
-                      <HomeIcon width={windowwidth < 800 ? 28 : 36} fill="#FFF" />
+                <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
+                  <div className="flex justify-center mb-2">
+                    <div className="bg-white/20 p-2 lg:p-3 rounded-full">
+                      <HomeIcon width={windowwidth < 800 ? 20 : 36} fill="#FFF" />
                     </div>
                   </div>
-                  <div className="text-sm font-medium opacity-90 mb-2 uppercase tracking-wide">Bedrooms</div>
-                  <div className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight">
+                  <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Bedrooms</div>
+                  <div className="text-sm md:text-xl lg:text-3xl font-bold leading-tight">
                     {property.bedrooms}
                   </div>
                 </div>

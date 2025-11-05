@@ -547,8 +547,8 @@ const Page = () => {
             }, [])}
           />
         </Suspense>
-        <nav className="lg:hidden w-full h-[8vh] bg-[#f3701f] shadow-2xl flex items-center justify-between px-4">
-          <div className="relative w-[60%]">
+        <nav className="lg:hidden w-full h-[8vh] bg-[#f3701f] shadow-2xl flex items-center px-4">
+          <div className="relative w-full">
             <SearchIcon fill="#aaa" width={18} />
             <input
               className="border-2 border-gray-100 rounded-xl pl-10 pr-2 text-sm py-1 w-full outline-none"
@@ -557,7 +557,6 @@ const Page = () => {
               aria-label="Search location or project"
             />
           </div>
-          <button className="text-white text-xl font-bold">Sign Up</button>
         </nav>
 
         {/* Filter & Sort Buttons */}

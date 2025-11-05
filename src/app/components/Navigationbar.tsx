@@ -44,17 +44,37 @@ const Navigationbar = ({ isOpen }) => {
     handleload();
   }, []);
 
-  const userCookie = Cookies.get("user"); // Using js-cookie
+  const ownerCookie = Cookies.get("owner");
+  const userCookie = Cookies.get("user");
+  const brokerCookie = Cookies.get("broker");
 
   const getUserCookie = () => {
-    if (userCookie) {
+    if (ownerCookie) {
       try {
-        setUser(userCookie);
-
-        setUserType(userCookie.slice(-1)); // Adjust this based on actual cookie structure
+        const payload = JSON.parse(atob(ownerCookie.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+        setUser(ownerCookie);
+        setUserType(2); // Owner
       } catch {
-        setUser(userCookie); // Fallback if not JSON
-        alert(typeof userCookie);
+        setUser(ownerCookie);
+        setUserType(2);
+      }
+    } else if (userCookie) {
+      try {
+        const payload = JSON.parse(atob(userCookie.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+        setUser(userCookie);
+        setUserType(1); // User
+      } catch {
+        setUser(userCookie);
+        setUserType(1);
+      }
+    } else if (brokerCookie) {
+      try {
+        const payload = JSON.parse(atob(brokerCookie.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+        setUser(brokerCookie);
+        setUserType(3); // Broker
+      } catch {
+        setUser(brokerCookie);
+        setUserType(3);
       }
     }
   };
@@ -62,7 +82,7 @@ const Navigationbar = ({ isOpen }) => {
   // Extract user from cookies
   useEffect(() => {
     getUserCookie();
-  }, [userCookie]);
+  }, [ownerCookie, userCookie, brokerCookie]);
 
   return (
     <motion.nav
@@ -126,14 +146,12 @@ const Navigationbar = ({ isOpen }) => {
               >
                 {usertype == 2 || usertype == "2" ? (
                   <li className="list-disc">
-                    <a
+                    <span
                       className="text-sm cursor-pointer text-orange-200 hover:text-orange-500 hover:underline"
-                      href="postproperty?who=owner"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={() => handleNavigation("/postproperty?who=owner")}
                     >
                       Post Property
-                    </a>
+                    </span>
                   </li>
                 ) : (
                   <li
@@ -296,7 +314,18 @@ const Navigationbar = ({ isOpen }) => {
           🆘 Help
         </li>
       </ul>
-      <button className="text-[#ff5d00] bg-[#f5d7c5] rounded-md py-2 mt-6">
+      <button 
+        className="text-[#ff5d00] bg-[#f5d7c5] rounded-md py-2 mt-6 cursor-pointer hover:bg-[#f3c5a8] transition-colors"
+        onClick={() => {
+          if (usertype == 2 || usertype == "2") {
+            handleNavigation("/postproperty?who=owner");
+          } else if (usertype == 3 || usertype == "3") {
+            handleNavigation("/postproperty?who=broker");
+          } else {
+            alert("Please Register or Login as Owner or Dealer");
+          }
+        }}
+      >
         Post Property
       </button>
     </motion.nav>

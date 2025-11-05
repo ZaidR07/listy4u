@@ -67,7 +67,7 @@ const Page = () => {
   const [user, setUser] = useState(null);
   const [usertype, setUserType] = useState(null);
   const [buildings, setBuildings] = useState([]);
-  const cookie = Cookies.get("user");
+  const cookie = Cookies.get("user") || Cookies.get("owner") || Cookies.get("broker");
 
   const getbuildings = async (location: string) => {
     try {
@@ -109,13 +109,11 @@ const Page = () => {
     try {
       const response = await axiosInstance.get('/api/getcompanyinfo');
       if (response.status !== 200) {
-        toast.error("Something Went Wrong!");
         return;
       }
       console.log(response.data);
       setCompanyInfo(response.data);
     } catch (error) {
-      toast.error("Error fetching company info");
       console.error(error);
     }
   };

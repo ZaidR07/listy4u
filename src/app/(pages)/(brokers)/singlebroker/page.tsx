@@ -92,10 +92,6 @@ const Page = () => {
               <h2 className="text-xl font-semibold mb-4">Broker Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border">
-                  <span className="text-xs text-gray-500">Broker ID</span>
-                  <p className="text-lg">{broker.broker_id}</p>
-                </div>
-                <div className="p-4 rounded-xl border">
                   <span className="text-xs text-gray-500">Email</span>
                   <p className="text-lg break-all">{broker.emailid}</p>
                 </div>

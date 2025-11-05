@@ -13,6 +13,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 import { setlocation } from "@/slices/locationSlice";
 import LocationBox from "@/app/components/LocationBox";
+
 import {
   LocationField,
   HighlightsField,
@@ -37,6 +38,9 @@ const Page = () => {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const [dropdownActive, setDropdownActive] = useState(false);
+  const [newBuildingName, setNewBuildingName] = useState("");
 
   const locationstate = useSelector((state: any) => state.location.location); // ✅ useSelector
 
@@ -215,15 +219,13 @@ const Page = () => {
           params: { location: locationstate },
         });
         if (response.status !== 200) {
-          console.error(response.data.message);
-          toast.error("Error Loading Buildings!!");
+          console.error("Error Loading Buildings!!", response.data?.message);
           return;
         }
         setSuggestions(response.data.payload);
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to load buildings!");
+      console.error("Failed to load buildings!", error);
     }
   };
 
@@ -237,12 +239,12 @@ const Page = () => {
       const filtered = suggestions.filter((suggestion) =>
         suggestion.toLowerCase().includes(formdata.Societyname.toLowerCase())
       );
-      setShowSuggestions(filtered.length > 0);
+      setShowSuggestions(true);
       setSelectedSuggestionIndex(-1);
     } else {
-      setShowSuggestions(false);
+      setShowSuggestions(isFocused || dropdownActive); // keep open if dropdown active
     }
-  }, [formdata.Societyname, isFocused, suggestions]);
+  }, [formdata.Societyname, isFocused, suggestions, dropdownActive]);
 
   // Handle selecting a suggestion
   const handleSuggestionClick = (suggestion) => {
@@ -379,6 +381,43 @@ const Page = () => {
     }
   };
 
+  const handleReset = () => {
+    const currentPostedBy = who === "broker" && broker ? broker.broker_id : userId;
+    setFormdata({
+      Societyname: "",
+      floor: "",
+      bedrooms: "",
+      area: "",
+      areaunits: "",
+      buildingfloors: "",
+      address: "",
+      amenities: [],
+      facing: "",
+      propertyage: "",
+      balconies: "",
+      bathrooms: "",
+      price: "",
+      postedby: currentPostedBy || "",
+      postedbytype: who || "user",
+      type: "",
+      constructionstatus: "",
+      furnishing: "",
+      highlights: [],
+      location: "",
+      line: "",
+      images: [],
+      availablefor: "",
+      reraapproved: [],
+      pgservices: [],
+      sharing: "",
+      totalcapacity: "",
+    });
+    setHighlightInput("");
+    setCurrentPropertytype(1);
+    dispatch(setlocation(""));
+    setForbox(true);
+  };
+
   useEffect(() => {
     handleload();
   }, []);
@@ -442,7 +481,16 @@ const Page = () => {
               value={formdata.Societyname}
               onChange={handleChange}
               onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => {
+                // Only close if focus moved outside dropdown as well
+                setTimeout(() => {
+                  const active = document.activeElement as HTMLElement | null;
+                  const insideDropdown = dropdownRef.current && active && dropdownRef.current.contains(active);
+                  if (!insideDropdown) {
+                    setIsFocused(false);
+                  }
+                }, 0);
+              }}
               onKeyDown={handleKeyDown}
               type="text"
               className="border-b-2 border-black w-full mt-3 text-gray-600"
@@ -455,28 +503,85 @@ const Page = () => {
             {/* Suggestions Dropdown */}
             {showSuggestions && (
               <motion.div
+                ref={dropdownRef}
                 className="absolute top-full left-0 w-full bg-white shadow-lg rounded-md mt-1 max-h-60 overflow-y-auto z-10"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
+                onMouseEnter={() => setDropdownActive(true)}
+                onMouseLeave={() => setDropdownActive(false)}
               >
-                {suggestions
-                  .filter((suggestion) =>
-                    suggestion
-                      .toLowerCase()
-                      .includes(formdata.Societyname.toLowerCase())
-                  )
-                  .map((suggestion, index) => (
-                    <div
-                      key={suggestion}
-                      className={`px-4 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 ${
-                        index === selectedSuggestionIndex ? "bg-gray-100" : ""
-                      }`}
-                      onMouseDown={() => handleSuggestionClick(suggestion)}
-                    >
-                      {suggestion}
-                    </div>
-                  ))}
+                {(() => {
+                  const filtered = suggestions.filter((s) =>
+                    s.toLowerCase().includes((formdata.Societyname || "").toLowerCase())
+                  );
+                  return (
+                    <>
+                      {filtered.map((suggestion, index) => (
+                        <div
+                          key={suggestion}
+                          className={`px-4 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 ${
+                            index === selectedSuggestionIndex ? "bg-gray-100" : ""
+                          }`}
+                          onMouseDown={() => handleSuggestionClick(suggestion)}
+                        >
+                          {suggestion}
+                        </div>
+                      ))}
+                      {filtered.length === 0 && (
+                        <div className="px-3 py-2 text-sm text-gray-700">
+                          <div className="mb-2">No building found.</div>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              className="flex-1 border rounded px-2 py-1"
+                              placeholder="Add a building/society/plot"
+                              value={newBuildingName}
+                              onFocus={() => {
+                                setDropdownActive(true);
+                                if (!newBuildingName && formdata.Societyname) {
+                                  setNewBuildingName(formdata.Societyname);
+                                }
+                              }}
+                              onBlur={() => setDropdownActive(false)}
+                              onChange={(e) => setNewBuildingName(e.target.value)}
+                            />
+                            <button
+                              className="px-3 py-1 bg-[#FF5D00] text-white rounded"
+                              onMouseDown={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const nameToAdd = (newBuildingName || formdata.Societyname || "").trim();
+                                if (!locationstate) {
+                                  alert("Please select a location first");
+                                  return;
+                                }
+                                if (!nameToAdd) return;
+                                try {
+                                  const resp = await axiosInstance.post('/api/addbuilding', {
+                                    location: locationstate,
+                                    building: nameToAdd,
+                                  });
+                                  if (resp.status === 200) {
+                                    setSuggestions((prev) => Array.from(new Set([...(prev || []), nameToAdd])));
+                                    handleSuggestionClick(nameToAdd);
+                                    setNewBuildingName("");
+                                  } else if (resp.status === 409) {
+                                    handleSuggestionClick(nameToAdd);
+                                  }
+                                } catch (err: any) {
+                                  console.error("Add building failed", err?.response?.data || err);
+                                }
+                              }}
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </motion.div>
             )}
           </div>
@@ -998,13 +1103,22 @@ const Page = () => {
             onImagesChange={handleImagesChange}
           />
 
-          <button
-            type="submit"
-            className="bg-[#FF5D00] text-white px-4 py-2 rounded-md mt-8 w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Add Property"}
-          </button>
+          <div className="flex gap-3 mt-8">
+            <button
+              type="submit"
+              className="bg-[#FF5D00] text-white px-4 py-2 rounded-md w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : "Add Property"}
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="border border-[#FF5D00] text-[#FF5D00] px-4 py-2 rounded-md w-full bg-white"
+            >
+              Reset
+            </button>
+          </div>
         </form>
       </div>
       {forbox && (
@@ -1058,7 +1172,7 @@ const Page = () => {
         <div className="mt-[10vh]">
           <LocationBox
             locationstate={locationstate}
-            setlocation={setlocation}
+            setlocation={(value) => dispatch(setlocation(value))}
           />
         </div>
       )}

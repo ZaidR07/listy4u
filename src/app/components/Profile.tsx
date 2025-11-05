@@ -68,7 +68,7 @@ const ExtendedProfile = ({ dropopen, router, user }) => {
   return (
     <>
       {dropopen && (
-        <div className="absolute top-[8vh] left-2 md:left-4 lg:left-6 xl:left-8 bg-[#fff] shadow-lg rounded-lg px-6 py-4 z-[999]">
+        <div className="absolute top-[8vh] right-0 bg-[#fff] shadow-lg rounded-lg px-6 py-4 z-[999] min-w-[150px]">
           <ul className="space-y-2">
             {isUser && (
               <li

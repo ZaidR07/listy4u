@@ -348,10 +348,10 @@ const Register = ({ registeropen, setRegisterOpen }) => {
                       <button
                         type="button"
                         disabled={timer > 0 || isSendingOtp}
-                        className="px-4 py-3 bg-[#f3701f] hover:bg-[#e5601a] text-white rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed min-w-[120px]"
+                        className="px-3 py-3 bg-[#f3701f] hover:bg-[#e5601a] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
                         onClick={sendRegisterOtp}
                       >
-                        {timer > 0 ? formatTimer(timer) : "Resend OTP"}
+                        {timer > 0 ? formatTimer(timer) : "Resend"}
                       </button>
                     </div>
 
@@ -491,13 +491,12 @@ const Register = ({ registeropen, setRegisterOpen }) => {
                       <button
                         type="button"
                         disabled={timer > 0 || isSendingOtp || !loginformdata.email}
-                        className="px-4 py-3 bg-[#f3701f] hover:bg-[#e5601a] text-white rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[120px]"
+                        className="px-3 py-3 bg-[#f3701f] hover:bg-[#e5601a] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-1 whitespace-nowrap"
                         onClick={SendLoginOtp}
                       >
                         {isSendingOtp ? (
                           <>
                             <LoadingSpinner />
-                            Sending...
                           </>
                         ) : timer > 0 ? (
                           formatTimer(timer)
