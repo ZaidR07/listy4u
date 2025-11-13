@@ -29,7 +29,7 @@ const nav = [
     name: "Vendors",
     width: 40,
     route: "viewvendors",
-    subnav: ["View Vendors", "Add Vendors", "Update/Remove Brokers"],
+    subnav: ["View Vendors", "Add Vendors", "Update/Remove Vendors"],
   },
   {
     icon: "user.svg",

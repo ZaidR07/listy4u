@@ -133,6 +133,8 @@ const Register = ({ registeropen, setRegisterOpen }) => {
       if (res.data?.token) {
         const cookieName = res.data?.role === 'owner' ? 'owner' : 'user';
         Cookies.set(cookieName, res.data.token, { expires: 365 });
+        // Save user email to localStorage for lead generation
+        localStorage.setItem('userEmail', formdata.email);
       }
       setRegisterOpen(false);
     } catch (error) {
@@ -160,6 +162,8 @@ const Register = ({ registeropen, setRegisterOpen }) => {
       if (response.data?.token) {
         const cookieName = response.data?.role === 'owner' ? 'owner' : 'user';
         Cookies.set(cookieName, response.data.token, { expires: 365 });
+        // Save user email to localStorage for lead generation
+        localStorage.setItem('userEmail', loginformdata.email);
       }
       setRegisterOpen(false);
     } catch (error) {

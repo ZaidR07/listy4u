@@ -177,6 +177,13 @@ const Page = () => {
       width: "120px",
       cell: (row) => <div className="text-sm">{row.mobile2 || '-'}</div>
     },
+    { 
+      name: "Credits", 
+      selector: (row) => row.credits?.credits || "NA",
+      sortable: true,
+      width: "90px",
+      cell: (row) => <div className="text-sm font-medium">{row.credits?.credits || 'NA'}</div>
+    },
     {
       name: "",
       cell: (row) => (

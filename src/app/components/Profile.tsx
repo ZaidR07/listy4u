@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
@@ -30,15 +30,19 @@ const ProfileIcon = () => {
   );
 };
 
-const AngleDown = ({ setDropOpen }) => {
+const AngleDown = ({ setDropOpen, dropopen }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width={15}
-      className="ml-2 cursor-pointer text-white lg:text-[#ff5d00]" // Apply Tailwind text color
+      className="lg:ml-2 cursor-pointer text-white lg:text-black transition-transform duration-200"
       viewBox="0 0 448 512"
-      onClick={() => setDropOpen((prev) => !prev)}
-      fill="currentColor" // Ensures color changes with Tailwind classes
+      onClick={(e) => {
+        e.stopPropagation();
+        setDropOpen((prev) => !prev);
+      }}
+      fill="currentColor"
+      style={{ transform: dropopen ? 'rotate(180deg)' : 'rotate(0deg)' }}
     >
       <path d="M201.4 374.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 306.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z" />
     </svg>
@@ -46,12 +50,35 @@ const AngleDown = ({ setDropOpen }) => {
 };
 
 const Separateemail = (user) => {
+  try {
+    // Try to decode JWT token
+    const base64 = user.split(".")[1];
+    if (base64) {
+      const json = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
+      const payload = JSON.parse(json);
+      return payload?.email || payload?.user?.email || payload?.sub || user;
+    }
+  } catch {}
+  
+  // Legacy format
   const emailMatch = user.match(/^(.+?)(\.[0-9]+)?$/);
-
   return emailMatch ? emailMatch[1] : user;
 };
 
-const ExtendedProfile = ({ dropopen, router, user }) => {
+const getUserName = (user) => {
+  try {
+    // Try to decode JWT token for name
+    const base64 = user.split(".")[1];
+    if (base64) {
+      const json = atob(base64.replace(/-/g, "+").replace(/_/g, "/"));
+      const payload = JSON.parse(json);
+      return payload?.name || payload?.brokername || payload?.username || null;
+    }
+  } catch {}
+  return null;
+};
+
+const ExtendedProfile = ({ dropopen, router, user, setDropOpen }) => {
   const email = Separateemail(user);
   const isBroker = !!Cookies.get("broker");
   const isOwner = !!Cookies.get("owner");
@@ -61,34 +88,42 @@ const ExtendedProfile = ({ dropopen, router, user }) => {
     Cookies.remove("user");
     Cookies.remove("owner");
     Cookies.remove("broker");
+    setDropOpen(false);
     window.location.reload(); // This will force a full page reload
     // Alternatively, you could use router.refresh() for Next.js 13+ but it might not clear all states
+  };
+
+  const handleMenuClick = (action) => {
+    setDropOpen(false);
+    action();
   };
 
   return (
     <>
       {dropopen && (
-        <div className="absolute top-[8vh] right-0 bg-[#fff] shadow-lg rounded-lg px-6 py-4 z-[999] min-w-[150px]">
-          <ul className="space-y-2">
-            {isUser && (
+        <div className="absolute top-[14vh] left-0 right-0 bg-[#fff] shadow-lg rounded-lg px-6 py-4 z-[999] mx-2">
+          {!isBroker && (
+            <ul className="space-y-2">
+              {isUser && (
+                <li
+                  className="flex cursor-pointer text-lg text-center hover:text-gray-500"
+                  onClick={() => handleMenuClick(() => router.push(`/wishlist?email=${email}`))}
+                >
+                  <HeartIcon />
+                  Wishlist
+                </li>
+              )}
               <li
                 className="flex cursor-pointer text-lg text-center hover:text-gray-500"
-                onClick={() => router.push(`/wishlist?email=${email}`)}
+                onClick={() => handleMenuClick(() => router.push('/profile'))}
               >
-                <HeartIcon />
-                Wishlist
+                <ProfileIcon />
+                Profile
               </li>
-            )}
-            <li
-              className="flex cursor-pointer text-lg text-center hover:text-gray-500"
-              onClick={() => router.push('/profile')}
-            >
-              <ProfileIcon />
-              Profile
-            </li>
-          </ul>
+            </ul>
+          )}
           <button
-            className="bg-red-500 text-white px-4 py-1 rounded-md w-full mt-4"
+            className={`bg-red-500 text-white px-4 py-1 rounded-md w-full ${!isBroker ? 'mt-4' : ''}`}
             onClick={handleLogout}
           >
             <span className="text-nowrap">Log Out</span>
@@ -102,24 +137,71 @@ const ExtendedProfile = ({ dropopen, router, user }) => {
 const Profile = ({ user }) => {
   const [dropopen, setDropOpen] = useState(false);
   const router = useRouter();
+  const email = Separateemail(user);
+  const name = getUserName(user);
+  const initial = name ? name.charAt(0).toUpperCase() : email.charAt(0).toUpperCase();
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropOpen(false);
+      }
+    };
+
+    if (dropopen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropopen]);
 
   return (
-    <div className="relative flex items-center">
-      <div
-        onClick={() => setDropOpen(true)}
-        className="bg-[#fff] lg:bg-[#ff5d00] flex justify-center items-center cursor-pointer text-white lg:font-semibold rounded-full w-9 h-9 lg:w-12 lg:h-12"
+    <div className="relative w-full h-full lg:h-auto" ref={dropdownRef}>
+      {/* Profile Bar - Desktop (Sidebar) Version */}
+      <div 
+        onClick={() => setDropOpen(!dropopen)}
+        className="hidden lg:flex items-center gap-3 p-3 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg cursor-pointer hover:shadow-md transition-all mb-4"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          className="text-[#ff5d00] lg:text-[#fff] w-5 h-5 lg:w-7 lg:h-7"
-          fill="currentColor"
-        >
-          <path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 12c-4.418 0-8 2.239-8 5v1a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1c0-2.761-3.582-5-8-5z" />
-        </svg>
+        {/* Avatar with Initial */}
+        <div className="bg-[#ff5d00] flex justify-center items-center text-white font-bold rounded-full w-12 h-12 flex-shrink-0">
+          {initial}
+        </div>
+        
+        {/* Name and Email */}
+        <div className="flex-1 overflow-hidden">
+          {name && (
+            <p className="font-semibold text-gray-800 truncate text-base">
+              {name}
+            </p>
+          )}
+          <p className="text-sm text-gray-600 truncate">
+            {email}
+          </p>
+        </div>
+        
+        {/* Dropdown Arrow */}
+        <AngleDown setDropOpen={setDropOpen} dropopen={dropopen} />
       </div>
-      <AngleDown setDropOpen={setDropOpen} />
-      <ExtendedProfile dropopen={dropopen} router={router} user={user} />
+
+      {/* Profile Bar - Mobile (Compact) Version */}
+      <div 
+        onClick={() => setDropOpen(!dropopen)}
+        className="flex justify-end lg:hidden items-center gap-2 p-2 cursor-pointer mb-4"
+      >
+        {/* Avatar with Initial */}
+        <div className="bg-amber-100 text-[#ff5d00] flex justify-center items-center font-bold rounded-full w-10 h-10 flex-shrink-0">
+          {initial}
+        </div>
+        
+        {/* Dropdown Arrow */}
+        <AngleDown setDropOpen={setDropOpen} dropopen={dropopen} />
+      </div>
+      
+      <ExtendedProfile dropopen={dropopen} router={router} user={user} setDropOpen={setDropOpen} />
     </div>
   );
 };
