@@ -1,0 +1,20 @@
+User-agent: *
+
+# Disallow admin panel and internal management pages
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /viewbrokers
+Disallow: /addbrokers
+Disallow: /updateremovebrokers
+Disallow: /viewproperties
+Disallow: /removeproperties
+Disallow: /viewvendors
+Disallow: /addvendors
+Disallow: /updateremovevendors
+Disallow: /variables
+Disallow: /feedbacks
+Disallow: /complaints
+Disallow: /editproperty
+Disallow: /removevendors
+
+Sitemap: https://listy4u.com/sitemap.xml

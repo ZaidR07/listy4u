@@ -61,7 +61,6 @@ const KeyIcon = () => (
 const Page = () => {
   const dispatch = useDispatch(); // ✅ useDispatch
   const locationstate = useSelector((state: any) => state.location.location); // ✅ useSelector
-  const [companyInfo, setCompanyInfo] = useState({ carousel: [] });
   const [registeropen, setRegisterOpen] = useState(false);
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -104,23 +103,6 @@ const Page = () => {
       getbuildings(locationstate);
     }
   }, [cookie, locationstate]);
-
-  const handleLoad = async () => {
-    try {
-      const response = await axiosInstance.get('/api/getcompanyinfo');
-      if (response.status !== 200) {
-        return;
-      }
-      console.log(response.data);
-      setCompanyInfo(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    handleLoad();
-  }, []);
 
   return (
     <>

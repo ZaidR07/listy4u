@@ -11,7 +11,6 @@ import { X } from "lucide-react";
 const Register = ({ registeropen, setRegisterOpen }) => {
   const [operation, setOperation] = useState("Register");
   const [timer, setTimer] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isVerifyingRegister, setIsVerifyingRegister] = useState(false);
@@ -266,20 +265,8 @@ const Register = ({ registeropen, setRegisterOpen }) => {
                     />
                     <span className="text-gray-700 font-medium">Owner</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="usertype"
-                      checked={formdata.usertype == 3}
-                      value={3}
-                      onChange={handleChange}
-                      className="text-[#f3701f] focus:ring-[#f3701f]"
-                    />
-                    <span className="text-gray-700 font-medium">Dealer</span>
-                  </label>
                 </div>
 
-                {formdata.usertype != 3 && (
                 <input
                   name="name"
                   type="text"
@@ -289,8 +276,7 @@ const Register = ({ registeropen, setRegisterOpen }) => {
                   onChange={handleChange}
                   required
                   disabled={registerOtpSent}
-                />)}
-                {formdata.usertype != 3 && (
+                />
                 <input
                   name="email"
                   type="email"
@@ -300,8 +286,7 @@ const Register = ({ registeropen, setRegisterOpen }) => {
                   onChange={handleChange}
                   required
                   disabled={registerOtpSent}
-                />)}
-                {formdata.usertype != 3 && (
+                />
                 <input
                   name="mobile"
                   type="tel"
@@ -313,15 +298,10 @@ const Register = ({ registeropen, setRegisterOpen }) => {
                   maxLength={10}
                   required
                   disabled={registerOtpSent}
-                />)}
+                />
 
-                {formdata.usertype == 3 && (
-                  <div className="bg-orange-50 text-orange-800 border border-orange-200 rounded-md p-3 text-sm">
-                    Dealer onboarding is handled by admin. Please switch to Login and choose Dealer to sign in.
-                  </div>
-                )}
 
-                {formdata.usertype != 3 && (!registerOtpSent ? (
+                {!registerOtpSent ? (
                   <button
                     type="button"
                     disabled={isSendingOtp}
@@ -375,7 +355,7 @@ const Register = ({ registeropen, setRegisterOpen }) => {
                       )}
                     </button>
                   </>
-                ))}
+                )}
 
                 <p className="text-center text-gray-600 mt-2">
                   Already have an account?{" "}

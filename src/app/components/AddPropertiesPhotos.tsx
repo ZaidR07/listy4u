@@ -56,14 +56,12 @@ const AddPropertiesPhotos = (props: any) => {
     const newPreviews = validFiles.map(file => URL.createObjectURL(file));
 
     // Update new images in parent component
-    setCurrentNewImages((prev: any[]) => {
-      const updated = [...(prev || []), ...validFiles];
-      // If consumer provided onImagesChange (legacy API), notify with updated list
-      if (typeof onImagesChange === "function") {
-        onImagesChange(updated);
-      }
-      return updated;
-    });
+    const updatedImages = [...(currentNewImages || []), ...validFiles];
+    setCurrentNewImages(updatedImages);
+    // If consumer provided onImagesChange (legacy API), notify with updated list
+    if (typeof onImagesChange === "function") {
+      onImagesChange(updatedImages);
+    }
 
     // Update preview URLs
     setPreviewUrls(prev => [...prev, ...newPreviews]);

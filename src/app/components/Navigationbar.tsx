@@ -127,7 +127,7 @@ const Navigationbar = ({ isOpen }) => {
           </AnimatePresence>
         </li>
 
-        {/* For Owners Section */}
+        {/* For Dealers / Builders Section */}
         <li>
           <button
             onClick={() => toggleExpand("forwoners")}
@@ -167,7 +167,7 @@ const Navigationbar = ({ isOpen }) => {
                     <li className="list-disc">
                       <a
                         className="text-sm cursor-pointer text-orange-200 hover:text-orange-500 hover:underline"
-                        href="viewownerproperty"
+                        href="viewpostedproperty"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -219,23 +219,43 @@ const Navigationbar = ({ isOpen }) => {
                 className="ml-6 py-2 space-y-3 border-b-[1px]"
               >
                 {usertype == 3 || usertype == "3" ? (
-                  <li className="list-disc">
-                    <a
-                      className="text-sm cursor-pointer hover:text-gray-300"
-                      href="postproperty?who=owner"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  <>
+                    <li className="list-disc">
+                      <a
+                        className="text-sm cursor-pointer hover:text-gray-300"
+                        href="/postproperty?who=broker"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Post Property
+                      </a>
+                    </li>
+                    <li className="list-disc">
+                      <a
+                        className="text-sm cursor-pointer hover:text-gray-300"
+                        href="/viewpostedproperty?who=broker"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View / Edit Post
+                      </a>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li
+                      className="list-disc text-sm"
+                      onClick={() => alert("Please Login as Dealer / Builder")}
                     >
                       Post Property
-                    </a>
-                  </li>
-                ) : (
-                  <li
-                    className="list-disc text-sm"
-                    onClick={() => alert("Please Login as Dealer / Builder")}
-                  >
-                    Post Property
-                  </li>
+                    </li>
+                    <li
+                      className="list-disc text-sm"
+                      onClick={() => alert("Please Login as Dealer / Builder")}
+                    >
+                      View / Edit Post
+                    </li>
+                  </>
                 )}
 
                 <li className="list-disc">

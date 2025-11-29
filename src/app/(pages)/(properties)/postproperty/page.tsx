@@ -236,9 +236,6 @@ const Page = () => {
   // Filter suggestions based on Societyname input
   useEffect(() => {
     if (formdata.Societyname.trim() && isFocused && suggestions.length > 0) {
-      const filtered = suggestions.filter((suggestion) =>
-        suggestion.toLowerCase().includes(formdata.Societyname.toLowerCase())
-      );
       setShowSuggestions(true);
       setSelectedSuggestionIndex(-1);
     } else {
@@ -512,14 +509,15 @@ const Page = () => {
                 onMouseLeave={() => setDropdownActive(false)}
               >
                 {(() => {
-                  const filtered = suggestions.filter((s) =>
+                  const filtered = (suggestions || []).filter((s) =>
+                    typeof s === "string" &&
                     s.toLowerCase().includes((formdata.Societyname || "").toLowerCase())
                   );
                   return (
                     <>
                       {filtered.map((suggestion, index) => (
                         <div
-                          key={suggestion}
+                          key={`${suggestion}-${index}`}
                           className={`px-4 py-2 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 ${
                             index === selectedSuggestionIndex ? "bg-gray-100" : ""
                           }`}

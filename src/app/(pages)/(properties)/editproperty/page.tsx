@@ -135,6 +135,9 @@ const EditPropertyPage = () => {
       if (propertyData.location) {
         dispatch(setlocation(propertyData.location));
       }
+      
+      // Set loading to false once data is loaded
+      setIsLoading(false);
     }
   }, [propertyData, user, dispatch, router, propertyId]);
 
@@ -423,7 +426,7 @@ const EditPropertyPage = () => {
                         type="radio"
                         name="bedrooms"
                         value={option}
-                        checked={formdata.bedrooms === option}
+                        checked={formdata.bedrooms === option || formdata.bedrooms?.replace(/\s+/g, '') === option?.replace(/\s+/g, '')}
                         onChange={handleChange}
                         required
                       />

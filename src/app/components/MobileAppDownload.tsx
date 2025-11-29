@@ -4,7 +4,7 @@ import Image from "next/image";
 
 const MobileAppDownload = () => {
   return (
-    <div id="mobile-app" className="my-8 md:my-12 lg:my-16 px-[5%] bg-yellow-50 py-8 md:py-12 lg:py-16">
+    <div id="mobile-app" className="my-8 md:my-12 lg:my-16 px-[5%]  py-8 md:py-12 lg:py-16">
       <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Content */}
@@ -52,7 +52,7 @@ const MobileAppDownload = () => {
           {/* Right Content - Static Image */}
           <div className="flex justify-center lg:justify-end">
             <Image
-              src="/tab.png"
+              src="/appdownload.png"
               alt="Listy4u app preview"
               width={640}
               height={480}

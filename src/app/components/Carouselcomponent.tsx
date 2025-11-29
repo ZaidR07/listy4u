@@ -37,7 +37,7 @@ const CarouselComponent = () => {
       showIndicators={false}
       className="w-full"
     >
-      {["/1740719627292.png", "/1740719627309.png", "/1740719627319.jpeg"].map((src, index) => (
+      {["/1740719627292.png", "/1740719627309.png", "/1740719627319.jpeg","/banner4.png"].map((src, index) => (
         <div key={index} className="relative w-full" style={{ height: imageHeight }}>
           <Image
             src={src}

@@ -537,7 +537,7 @@ const DesktopNav = () => {
                 usertype == 2 || usertype == "2" ? (
                   <a
                     className="hover:text-orange-500 hover:underline lg:text-sm 2xl:text-base cursor-pointer"
-                    href="viewownerproperty"
+                    href="viewpostedproperty"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -582,35 +582,60 @@ const DesktopNav = () => {
             onMouseEnter={() => setFordealerOpen(true)}
           >
             <span>For&nbsp;Dealers</span>
-            <AngleDown width={13}/>
+            <AngleDown width={13} />
             {fordealeropen && (
               <div
                 onMouseLeave={() => setFordealerOpen(false)}
                 className="absolute top-[10vh] ml-8 gap-2 px-4 py-5 bg-[#fff] shadow-inner rounded-lg flex flex-col"
               >
                 {broker ? (
-                  <a
-                    className="hover:text-orange-500 hover:underline lg:text-xs  2xl:text-base"
-                    href="/postproperty?who=broker"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Post Property
-                  </a>
+                  <>
+                    <a
+                      className="hover:text-orange-500 hover:underline lg:text-xs  2xl:text-base"
+                      href="/postproperty?who=broker"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Post Property
+                    </a>
+                    <a
+                      className="hover:text-orange-500 hover:underline lg:text-xs  2xl:text-base"
+                      href="/viewpostedproperty?who=broker"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View / Edit Post
+                    </a>
+                  </>
                 ) : (
-                  <span
-                    className="hover:text-orange-500 hover:underline lg:text-sm  2xl:text-base cursor-pointer"
-                    onClick={() => {
-                      if (ownerCookie || userCookie) {
-                        alert("You are currently logged in as Owner/User. Please logout and login as Dealer.");
-                        return;
-                      }
-                      setFordealerOpen(false);
-                      setRegisterOpen(true);
-                    }}
-                  >
-                    Post Property
-                  </span>
+                  <>
+                    <span
+                      className="hover:text-orange-500 hover:underline lg:text-sm  2xl:text-base cursor-pointer"
+                      onClick={() => {
+                        if (ownerCookie || userCookie) {
+                          alert("You are currently logged in as Owner/User. Please logout and login as Dealer.");
+                          return;
+                        }
+                        setFordealerOpen(false);
+                        setRegisterOpen(true);
+                      }}
+                    >
+                      Post Property
+                    </span>
+                    <span
+                      className="hover:text-orange-500 hover:underline lg:text-sm  2xl:text-base cursor-pointer"
+                      onClick={() => {
+                        if (ownerCookie || userCookie) {
+                          alert("You are currently logged in as Owner/User. Please logout and login as Dealer.");
+                          return;
+                        }
+                        setFordealerOpen(false);
+                        setRegisterOpen(true);
+                      }}
+                    >
+                      View / Edit Post
+                    </span>
+                  </>
                 )}
                 <hr />
                 <a

@@ -6,7 +6,7 @@ import axiosInstance from "@/lib/axios";
 import { useCallback, useEffect } from "react";
 import { RupeeIcon, HomeIcon, RulerIcon } from "@/app/Icons";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 
 const page = () => {
@@ -41,36 +41,78 @@ const page = () => {
     },
   ]);
 
-  const [user, setUser] = useState(null); // State for user
+  const [user, setUser] = useState<string | null>(null); // State for owner/user token
 
-  const userCookie = Cookies.get("user"); // Using js-cookie
+  const ownerCookie = Cookies.get("owner");
+  const userCookie = Cookies.get("user");
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const who = searchParams.get("who");
 
   const getUserCookie = () => {
-    if (userCookie) {
+    const cookie = ownerCookie || userCookie;
+    if (cookie) {
       try {
-        setUser(userCookie);
+        setUser(cookie);
       } catch {
         console.error("Error Setting Cookies");
       }
     }
   };
 
-  // Extract user from cookies
+  // Extract user from cookies (owners/users)
   useEffect(() => {
     getUserCookie();
-  }, [userCookie]);
+  }, [ownerCookie, userCookie]);
+
+  const decodeUserEmail = () => {
+    const cookie = ownerCookie || userCookie;
+    if (!cookie) return null;
+    
+    try {
+      const payload = JSON.parse(atob(cookie.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      return payload?.email || payload?.sub; // Try email first, then sub as fallback
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  };
 
   const getData = useCallback(async () => {
     try {
-      if (userCookie) {
-        const propertyRes = await axiosInstance.get('/api/getownerproperties', {
-          params: { user: userCookie },
+      if (who === "broker") {
+        // Verify broker session and fetch broker properties
+        const verify = await axiosInstance.get('/api/verifybrokercookie');
+        const broker = verify.data?.broker;
+        if (!broker || !broker.broker_id) {
+          console.error("Broker not found or not authenticated");
+          return;
+        }
+
+        const propertyRes = await axiosInstance.get('/api/getbrokerproperties', {
+          params: { id: broker.broker_id },
         });
 
-        if (propertyRes.data.payload.length < 0) {
-          console.error("Invalid response data");
+        if (!Array.isArray(propertyRes.data.payload)) {
+          console.error("Invalid broker properties response");
+          return;
+        }
+
+        setPropertieslist(propertyRes.data.payload);
+      } else {
+        const userEmail = decodeUserEmail();
+        if (!userEmail) {
+          console.error("No user email found in token");
+          return;
+        }
+
+        const propertyRes = await axiosInstance.get('/api/getownerproperties', {
+          params: { user: userEmail },
+        });
+
+        if (!Array.isArray(propertyRes.data.payload)) {
+          console.error("Invalid owner properties response");
           return;
         }
 
@@ -79,7 +121,7 @@ const page = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }, []);
+  }, [who, ownerCookie, userCookie]);
 
   useEffect(() => {
     getData();

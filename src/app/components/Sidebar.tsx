@@ -128,7 +128,11 @@ const Sidebar = ({ opensidebar, setOpenSidebar }) => {
 
   const decodeUserRole = (): { role?: string } => {
     try {
-      const token = Cookies.get("user");
+      // Check user cookie first, then owner cookie
+      const userToken = Cookies.get("user");
+      const ownerToken = Cookies.get("owner");
+      const token = userToken || ownerToken;
+      
       if (!token) return {};
       const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
       return { role: payload?.role };
@@ -182,8 +186,8 @@ const Sidebar = ({ opensidebar, setOpenSidebar }) => {
       nav: "For Owners",
 
       subnav: [
-        { label: "Post Property", uri: "postproperty?who=buildbroker" },
-        { label: "View / Edit Post", uri: "viewownerproperty" },
+        { label: "Post Property", uri: "/postproperty?who=owner" },
+        { label: "View / Edit Post", uri: "viewpostedproperty" },
       ],
       order: 1,
     },
@@ -257,8 +261,14 @@ const Sidebar = ({ opensidebar, setOpenSidebar }) => {
           uri: "/postproperty?who=broker",
         },
         {
-          label: "Subscription Plans",
+          label: "View / Edit Post",
           category: 2,
+          requiresBrokerLogin: true,
+          uri: "/viewpostedproperty?who=broker",
+        },
+        {
+          label: "Subscription Plans",
+          category: 3,
           uri: "/plans?who=broker",
         },
       ],

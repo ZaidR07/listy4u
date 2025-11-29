@@ -47,8 +47,7 @@ const nav = [
     icon: "settings.svg",
     name: "Settings",
     width: 50,
-    route: "company",
-    subnav: ["Company", "variables" ],
+    route: "variables",
   },
 ];
 
