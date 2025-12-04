@@ -2,7 +2,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense , useRef } from "react";
 import axiosInstance from "@/lib/axios";
-import { HomeIcon, RulerIcon, RupeeIcon } from "@/app/Icons";
+import { House, Ruler, IndianRupee, Lock } from "lucide-react";
 import { priceconverter } from "@/utils/priceconverter";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
@@ -41,7 +41,7 @@ const PhoneIcon = () => {
 const PropertyCard = ({ property, router }) => (
   <div
     onClick={() => router.push(`singleproperty?id=${property.property_id}`)}
-    className="bg-white min-w-[40%] max-w-[40%] xl:min-w-[25%] xl:max-w-[25%] px-3 py-3 relative rounded-xl border border-orange-200 shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:scale-105"
+    className="bg-white min-w-[60%] sm:min-w-[40%] sm:max-w-[40%] xl:min-w-[25%] xl:max-w-[25%] px-3 py-3 relative rounded-xl border border-orange-200 shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:scale-105"
   >
     <div className="relative overflow-hidden rounded-lg">
       <img
@@ -82,6 +82,7 @@ const PropertyDetails = () => {
     images: [],
     highlights: [],
     price: "",
+    deposit: "",
     areaunits: "",
     area: "",
     bedrooms: "",
@@ -101,6 +102,7 @@ const PropertyDetails = () => {
     postedby_id: 0,
     postedby: "",
     type: "",
+    for: "",
     property_id: null,
   });
   const [loading, setLoading] = useState(true);
@@ -388,6 +390,16 @@ const PropertyDetails = () => {
     if (ref.current) ref.current.scrollBy({ left: 300, behavior: "smooth" });
   };
 
+  const hasDeposit =
+    (property.for?.toLowerCase() === "rent" || property.for?.toLowerCase() === "pg") &&
+    !!property.deposit;
+
+  const hasBedroomsStat = !!property.bedrooms;
+
+  const statCount = 2 + (hasDeposit ? 1 : 0) + (hasBedroomsStat ? 1 : 0); // Price + Area + optional Deposit + optional Bedrooms
+  const gridColsClass =
+    statCount >= 4 ? "lg:grid-cols-4" : statCount === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2";
+
   return (
     <div className="bg-gradient-to-b from-orange-50 via-white to-orange-50 min-h-screen">
       <DesktopNav />
@@ -400,7 +412,7 @@ const PropertyDetails = () => {
       ) : property && property.property_id ? (
         <div className="pb-12">
           {/* Image Gallery */}
-          <div className="mx-[2%] lg:mx-[4%] mt-[10vh] lg:mt-[8vh] rounded-2xl overflow-hidden shadow-2xl">
+          <div className="mx-[2%] lg:mx-[4%] mt-[10vh] landscape:mt-[22vh] md:landscape:mt-[10vh] lg:mt-[8vh] rounded-2xl overflow-hidden shadow-2xl">
             {/* Mobile Carousel - Single Image */}
             <div className="lg:hidden relative h-[40vh]">
               <div
@@ -579,11 +591,11 @@ const PropertyDetails = () => {
 
             {/* Key Stats Card */}
             <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 text-white p-4 lg:p-8 rounded-3xl shadow-2xl mb-8 border border-orange-400/30">
-              <div className="grid grid-cols-3 lg:grid-cols-3 gap-3 lg:gap-6">
+              <div className={`grid gap-3 lg:gap-6 grid-cols-2 sm:grid-cols-3 ${gridColsClass}`}>
                 <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
                   <div className="flex justify-center mb-2">
                     <div className="bg-white/20 p-2 lg:p-3 rounded-full">
-                      <RupeeIcon width={windowwidth < 800 ? 20 : 36} fill="#FFF" />
+                     <IndianRupee size={windowwidth < 640 ? 24 : 36} strokeWidth={1.25} />
                     </div>
                   </div>
                   <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Price</div>
@@ -591,10 +603,24 @@ const PropertyDetails = () => {
                     {priceconverter(property.price)}
                   </div>
                 </div>
+                {/* Deposit - Only show for Rent and PG when value present */}
+                {hasDeposit && (
+                  <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
+                    <div className="flex justify-center mb-2">
+                      <div className="bg-white/20 p-2 lg:p-3 rounded-full">
+                        <IndianRupee size={windowwidth < 640 ? 24 : 36} strokeWidth={1.25} />
+                      </div>
+                    </div>
+                    <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Deposit</div>
+                    <div className="text-sm md:text-xl lg:text-3xl font-bold leading-tight">
+                      {priceconverter(property.deposit)}
+                    </div>
+                  </div>
+                )}
                 <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
                   <div className="flex justify-center mb-2">
                     <div className="bg-white/20 p-2 lg:p-3 rounded-full">
-                      <RulerIcon width={windowwidth < 800 ? 20 : 36} fill="#FFF" />
+                     <Ruler size={windowwidth < 640 ? 24 : 36} strokeWidth={1.25} />
                     </div>
                   </div>
                   <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Area</div>
@@ -602,17 +628,19 @@ const PropertyDetails = () => {
                     {`${property.area} ${property.areaunits}`}
                   </div>
                 </div>
-                <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
-                  <div className="flex justify-center mb-2">
-                    <div className="bg-white/20 p-2 lg:p-3 rounded-full">
-                      <HomeIcon width={windowwidth < 800 ? 20 : 36} fill="#FFF" />
+                {hasBedroomsStat && (
+                  <div className="text-center bg-white/15 backdrop-blur-md rounded-2xl p-3 lg:p-6 border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:shadow-lg">
+                    <div className="flex justify-center mb-2">
+                      <div className="bg-white/20 p-2 lg:p-3 rounded-full">
+                        <House size={windowwidth < 640 ? 24 : 36} strokeWidth={1.25} />
+                      </div>
+                    </div>
+                    <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Bedrooms</div>
+                    <div className="text-sm md:text-xl lg:text-3xl font-bold leading-tight">
+                      {property.bedrooms}
                     </div>
                   </div>
-                  <div className="text-xs lg:text-sm font-medium opacity-90 mb-1 lg:mb-2 uppercase tracking-wide">Bedrooms</div>
-                  <div className="text-sm md:text-xl lg:text-3xl font-bold leading-tight">
-                    {property.bedrooms}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 

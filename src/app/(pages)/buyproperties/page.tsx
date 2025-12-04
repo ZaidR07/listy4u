@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { SearchIcon, AngleDownIcon, FilterIcon } from "@/app/Icons";
 import PropertiesNav from "@/app/components/PropertiesNav";
 import { PropertyDropdown, PriceDropdown, PropertyCard, PropertyFilterSidebar } from "@/app/components/properties";
+import { useSelector } from "react-redux";
 
 const Page = () => {
   const placeholders = useMemo(
@@ -15,7 +16,9 @@ const Page = () => {
     []
   );
 
-  const router = useRouter();
+
+
+  const locationstate = useSelector((state: any) => state.location.location);
 
   const [type, setType] = useState("");
   const [view, setView] = useState("");
@@ -250,6 +253,8 @@ const Page = () => {
     setSearch(params.get("search") || "");
   }, []); // Runs once on mount
 
+  const normalizeNoSpace = (s) => String(s || "").toLowerCase().replace(/\s+/g, "");
+
   // Jaro-Winkler Similarity function
   const jaroWinkler = (s1, s2) => {
     const m = [...s1].filter((c) => s2.includes(c)).length;
@@ -269,8 +274,8 @@ const Page = () => {
   // Check if similarity score is 70% or more
   const isSimilar = (input, target) => {
     if (!input || !target) return false;
-    input = input.toLowerCase();
-    target = target.toLowerCase();
+    input = normalizeNoSpace(input);
+    target = normalizeNoSpace(target);
     const similarity = jaroWinkler(input, target) * 100; // Convert to percentage
     return similarity >= 70;
   };
@@ -290,25 +295,33 @@ const Page = () => {
 
       let filteredList = propertyRes.data.payload;
 
+      // Filter by location state if available
+      if (locationstate) {
+        filteredList = filteredList.filter((item) => {
+          const itemLocation = normalizeNoSpace(item.location);
+          const locationStateNorm = normalizeNoSpace(locationstate);
+          return itemLocation.includes(locationStateNorm) || isSimilar(itemLocation, locationStateNorm);
+        });
+      }
+
       if (type)
         filteredList = filteredList.filter((item) => item.type === type);
 
-      if (view) filteredList = filteredList.filter((item) => item.for === view);
+      if (view) filteredList = filteredList.filter((item) => item.for.toLowerCase() === view.toLowerCase());
 
       if (search) {
-        const searchLower = search.toLowerCase();
-        
+        const searchNorm = normalizeNoSpace(search);
 
         filteredList = filteredList.filter((item) => {
-          const location = item.location?.toLowerCase() || "";
-          const societyName = item.Societyname?.toLowerCase() || "";
+          const location = normalizeNoSpace(item.location);
+          const societyName = normalizeNoSpace(item.Societyname);
 
           // Matches if location OR society name has 70% similarity OR contains search query
           return (
-            location.includes(searchLower) ||
-            societyName.includes(searchLower) ||
-            isSimilar(location, searchLower) ||
-            isSimilar(societyName, searchLower)
+            location.includes(searchNorm) ||
+            societyName.includes(searchNorm) ||
+            isSimilar(location, searchNorm) ||
+            isSimilar(societyName, searchNorm)
           );
         });
       }
@@ -319,13 +332,13 @@ const Page = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
-  }, [type, view, search]);
+  }, [type, view, search, locationstate]);
 
   useEffect(() => {
-    if (type != "" || view != "" || search != "") {
+    if (type != "" || view != "" || search != "" || locationstate) {
       getData();
     }
-  }, [type, view, search]); // Runs when type/view change
+  }, [type, view, search, locationstate]); // Runs when type/view/location change
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -354,7 +367,10 @@ const Page = () => {
     if (postedbyValues && postedbyValues.length > 0) {
       const selected = postedbyValues.map((v) => String(v).toLowerCase());
       newlist = newlist.filter((item) => {
-        const val = (item.postedbytype || "").toString().toLowerCase();
+        let val = (item.postedbytype || "").toString().toLowerCase();
+        if(val === 'broker') {
+          val ='dealer'
+        }
         return selected.includes(val);
       });
     }
@@ -547,11 +563,11 @@ const Page = () => {
             }, [])}
           />
         </Suspense>
-        <nav className="lg:hidden w-full h-[8vh] bg-[#f3701f] shadow-2xl flex items-center px-4">
-          <div className="relative w-full">
+        <nav className="lg:hidden w-full min-h-[8vh] landscape:mt-[20vh] landscape:h-[20vh] bg-[#f3701f] shadow-2xl flex items-center px-4">
+          <div className="relative w-full py-2 sm:py-0">
             <SearchIcon fill="#aaa" width={18} />
             <input
-              className="border-2 border-gray-100 rounded-xl pl-10 pr-2 text-sm py-1 w-full outline-none"
+              className="border-2 border-gray-100 rounded-xl pl-10 pr-2 text-sm py-2 w-full outline-none"
               type="search"
               placeholder={placeholders[placeholderIndex]}
               aria-label="Search location or project"

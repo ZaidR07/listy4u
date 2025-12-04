@@ -48,8 +48,8 @@ const HamIcon = ({ setOpenSidebar, opensidebar }) => {
       fill="#130535ca"
       viewBox="0 0 512 512"
       className="cursor-pointer ml-[2vw]"
-      animate={{ scale: [0.8, 1.1, 0.8] }} // Enlarges and shrinks
-      transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }} // Smooth looping
+      // animate={{ scale: [0.8, 1.1, 0.8] }} // Enlarges and shrinks
+      // transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }} // Smooth looping
       onClick={() => setOpenSidebar(!opensidebar)} // Pass function to update state
     >
       <path d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM64 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L96 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" />
@@ -181,7 +181,7 @@ const DesktopNav = () => {
   }, [ownerCookie, brokerCookie, locationstate]);
 
   return (
-    <nav className="relative hidden w-full h-full lg:flex shadow-lg items-center px-[1%]">
+    <nav className="relative hidden w-full h-full lg:flex shadow-md items-center px-[1%]">
       <ul className="flex w-[44.5%] max-w-[44.5%] lg:gap-6 xl:gap-10 text-base justify-end">
         {locationstate && (
           <span
@@ -267,7 +267,7 @@ const DesktopNav = () => {
                       <li key={index} className="cursor-pointer py-2">
                         <a
                           href={`/buyproperties?type=${item.name}&view=Sale`}
-                          target="_blank"
+                          target="_self"
                           rel="noopener noreferrer"
                           className="block w-full"
                         >
@@ -291,7 +291,7 @@ const DesktopNav = () => {
                       <li key={index} className="cursor-pointer py-2">
                         <a
                           href={`/buyproperties?type=${item}&view=Sale`}
-                          target="_blank"
+                          target="_self"
                           rel="noopener noreferrer"
                           className="block w-full"
                         >
@@ -402,7 +402,7 @@ const DesktopNav = () => {
                       <li key={index} className="cursor-pointer py-2">
                         <a
                           href={`/buyproperties?type=${item.name}&view=Rent`}
-                          target="_blank"
+                          target="_self"
                           rel="noopener noreferrer"
                           className="block w-full"
                         >
@@ -426,7 +426,7 @@ const DesktopNav = () => {
                       <li className="cursor-pointer py-2">
                         <a
                           href={`/buyproperties?type=${item}&view=Rent`}
-                          target="_blank"
+                          target="_self"
                           rel="noopener noreferrer"
                           className="block w-full"
                         >
@@ -467,7 +467,7 @@ const DesktopNav = () => {
         <li className="flex items-center gap-2 cursor-pointer">
           <a
             href={`/buyproperties?view=Pg`}
-            target="_blank"
+            target="_self"
             rel="noopener noreferrer"
             className="block w-full lg:text-sm xl:text-base"
           >

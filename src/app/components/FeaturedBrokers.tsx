@@ -1,6 +1,7 @@
 import { MedalIcon } from "lucide-react";
 import axiosInstance from "@/lib/axios";
 import { useState, useEffect, useCallback } from "react";
+import { svgAvatarDataUrl, getBrokerImageSrc, handleBrokerImageError } from "@/utils/brokerAvatar";
 const medalColors = ["#FFD700", "#C0C0C0", "#CD7F32", "#4b4a4a", "#4b4a4a"]; // Gold, Silver, Bronze, Black for 4th & 5th
 
 const FeaturedBrokers = () => {
@@ -8,35 +9,62 @@ const FeaturedBrokers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const initials = (name?: string) => {
-    if (!name) return "B";
-    const parts = name.trim().split(/\s+/).slice(0, 2);
-    return parts.map(p => p[0]?.toUpperCase()).join("") || "B";
-  };
-
-  const svgAvatarDataUrl = (name?: string) => {
-    const text = initials(name);
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'>
-      <rect width='100%' height='100%' rx='64' ry='64' fill='#f3f4f6'/>
-      <text x='50%' y='54%' dominant-baseline='middle' text-anchor='middle' font-family='Arial, Helvetica, sans-serif' font-size='48' fill='#374151'>${text}</text>
-    </svg>`;
-    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-  };
-
   const loaddata = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await axiosInstance.get('/api/getbrokers');
+      const brokerRes = await axiosInstance.get('/api/getbrokers');
+      const brokers = Array.isArray(brokerRes?.data?.payload) ? brokerRes.data.payload : [];
 
-      if (response.data.payload.length > 0) {
-        setBrokerlist(response.data.payload.slice(0, 5)); // Only top 5 brokers
-      } else {
-        setBrokerlist([]); // Ensure empty array if no data
+      if (!brokers.length) {
+        setBrokerlist([]);
+        return;
       }
+
+      let properties: any[] = [];
+      try {
+        const propRes = await axiosInstance.get('/api/getproperties');
+        properties = Array.isArray(propRes?.data?.payload) ? propRes.data.payload : [];
+      } catch (e) {
+        // If properties fail to load, fall back to first 5 brokers
+        setBrokerlist(brokers.slice(0, 5));
+        return;
+      }
+
+      if (!properties.length) {
+        setBrokerlist(brokers.slice(0, 5));
+        return;
+      }
+
+      const propertyCountMap: Record<string, number> = {};
+
+      properties.forEach((prop: any) => {
+        const key = String(prop?.postedby || '').trim();
+        if (!key) return;
+        propertyCountMap[key] = (propertyCountMap[key] || 0) + 1;
+      });
+
+      const brokersWithCounts = brokers.map((broker: any) => {
+        const idKey = String(broker?.broker_id || '').trim();
+        const count = idKey ? propertyCountMap[idKey] || 0 : 0;
+        return { ...broker, __propertyCount: count };
+      });
+
+      brokersWithCounts.sort((a: any, b: any) => b.__propertyCount - a.__propertyCount);
+
+      const topWithProperties = brokersWithCounts
+        .filter((b: any) => b.__propertyCount > 0)
+        .slice(0, 5);
+
+      const finalList = topWithProperties.length > 0
+        ? topWithProperties
+        : brokers.slice(0, 5);
+
+      setBrokerlist(finalList);
     } catch (error) {
       setError("Failed to load brokers");
+      setBrokerlist([]);
     } finally {
       setLoading(false);
     }
@@ -49,7 +77,7 @@ const FeaturedBrokers = () => {
   return (
     <div className="w-full bg-[#fef6f0] pb-6 ">
       {/* Header */}
-      <div className="mt-[2vh] py-6 lg:pt-12 mx-2 text-xl px-[3%] shadow-inner rounded-2xl flex items-center">
+      <div className="mt-[2vh] py-6 lg:pt-12 mx-2 text-xl px-[5%] shadow-inner flex items-center">
         <MedalIcon
           className="text-[rgb(243,112,31)]"
           size={50}
@@ -69,7 +97,7 @@ const FeaturedBrokers = () => {
       ) : error ? (
         <p className="text-center mt-4 text-red-500">{error}</p>
       ) : brokerlist.length > 0 ? (
-        <div className="w-full px-4 lg:px-8 lg:pb-8">
+        <div className="w-full px-6 lg:px-8 lg:pb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6">
           {brokerlist.map((item, index) => (
             <div
@@ -89,16 +117,12 @@ const FeaturedBrokers = () => {
               <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-gray-200 bg-white flex items-center justify-center">
                 <img
                   className="w-full h-full object-cover"
-                  src={item?.image ? item.image : svgAvatarDataUrl(item.brokername)}
+                  src={getBrokerImageSrc(item?.image, item.brokername)}
                   alt={item?.brokername ? `${item.brokername} photo` : "broker photo"}
                   referrerPolicy="no-referrer"
                   loading="lazy"
                   decoding="async"
-                  onError={(e) => {
-                    const img = e.currentTarget as HTMLImageElement;
-                    img.onerror = null;
-                    img.src = svgAvatarDataUrl(item.brokername);
-                  }}
+                  onError={(e) => handleBrokerImageError(e, item.brokername)}
                 />
               </div>
 

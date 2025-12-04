@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 
 // Same-origin by default so HttpOnly cookies are sent.
 // Override with NEXT_PUBLIC_APP_URI only when the API is on a different domain.
-const API_URL = process.env.NEXT_PUBLIC_APP_URI || '';
+const API_URL = '';
 
 // Create axios instance
 const axiosInstance = axios.create({

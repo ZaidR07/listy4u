@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 
 interface BrokerFormData {
   broker_id: string;
@@ -8,6 +9,7 @@ interface BrokerFormData {
   mobile1: string;
   mobile2: string;
   address: string;
+  servicelocations?: any;
 }
 
 interface BrokerUpdateDrawerProps {
@@ -16,6 +18,8 @@ interface BrokerUpdateDrawerProps {
   onClose: () => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
+  locationList?: string[];
+  onServiceLocationsChange?: (list: string[]) => void;
 }
 
 const CloseIcon = ({ onClick }: { onClick: () => void }) => {
@@ -39,8 +43,48 @@ export const BrokerUpdateDrawer = ({
   onClose,
   onChange,
   onSubmit,
+  locationList = [],
+  onServiceLocationsChange,
 }: BrokerUpdateDrawerProps) => {
   if (!isOpen) return null;
+
+  const [locationSearch, setLocationSearch] = useState("");
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+
+  useEffect(() => {
+    const sl = (formdata as any)?.servicelocations;
+    if (!sl) {
+      setSelectedLocations([]);
+      return;
+    }
+    if (Array.isArray(sl)) {
+      setSelectedLocations(sl as string[]);
+    } else if (typeof sl === "string") {
+      try {
+        const parsed = JSON.parse(sl as string);
+        setSelectedLocations(Array.isArray(parsed) ? parsed : String(sl).split(",").map((s) => s.trim()).filter(Boolean));
+      } catch {
+        setSelectedLocations(String(sl).split(",").map((s) => s.trim()).filter(Boolean));
+      }
+    } else {
+      setSelectedLocations([]);
+    }
+  }, [formdata]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (showLocationDropdown && !event.target.closest('.location-dropdown-container')) {
+        setShowLocationDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showLocationDropdown]);
+
+  const filteredLocations = (locationList || []).filter(
+    (l) => l.toLowerCase().includes(locationSearch.toLowerCase()) && !selectedLocations.includes(l)
+  );
 
   return (
     <div className="fixed inset-0 z-[1000000]">
@@ -106,6 +150,70 @@ export const BrokerUpdateDrawer = ({
                   onChange={onChange}
                   className="w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 px-3 py-2 text-sm"
                 />
+              </div>
+              <div className="lg:col-span-2">
+                <label className="block text-sm text-gray-600 mb-1">Service Locations</label>
+                <div className="relative location-dropdown-container">
+                  <div
+                    className="min-h-[38px] border border-gray-300 rounded p-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition cursor-text"
+                    onClick={() => setShowLocationDropdown(true)}
+                  >
+                    {selectedLocations.length === 0 ? (
+                      <span className="text-gray-400 text-sm">Click to add service locations...</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedLocations.map((location, index) => (
+                          <span key={index} className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                            {location}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const updated = selectedLocations.filter((l) => l !== location);
+                                setSelectedLocations(updated);
+                                onServiceLocationsChange?.(updated);
+                              }}
+                              className="text-orange-500 hover:text-orange-700 font-bold text-xs"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {showLocationDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-40 overflow-y-auto">
+                      <input
+                        type="text"
+                        placeholder="Search locations..."
+                        value={locationSearch}
+                        onChange={(e) => setLocationSearch(e.target.value)}
+                        className="w-full px-3 py-2 border-b border-gray-200 outline-none text-sm"
+                        autoFocus
+                      />
+                      {filteredLocations.length === 0 ? (
+                        <div className="px-3 py-2 text-gray-500 text-xs">No locations found</div>
+                      ) : (
+                        filteredLocations.map((l, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              const updated = [...selectedLocations, l];
+                              setSelectedLocations(updated);
+                              onServiceLocationsChange?.(updated);
+                              setLocationSearch("");
+                              setShowLocationDropdown(false);
+                            }}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-xs"
+                          >
+                            {l}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="lg:col-span-2">
                 <label className="block text-sm text-gray-600 mb-1">Address</label>

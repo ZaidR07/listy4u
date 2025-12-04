@@ -3,9 +3,18 @@ import { useState, useEffect } from "react";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
 import Image from "next/image";
+import axiosInstance from "@/lib/axios";
+
+const fallbackBanners = [
+  "/1740719627292.png",
+  "/1740719627309.png",
+  "/1740719627319.jpeg",
+  "/banner4.png",
+];
 
 const CarouselComponent = () => {
   const [imageHeight, setImageHeight] = useState("26vh"); // Default for mobile
+  const [banners, setBanners] = useState<string[]>([]);
 
   useEffect(() => {
     const updateHeight = () => {
@@ -13,7 +22,7 @@ const CarouselComponent = () => {
       if (width < 640) {
         setImageHeight("26vh"); // Mobile
       } else if (width < 1024) {
-        setImageHeight("40vh"); // Tablet
+        setImageHeight("30vh"); // Tablet
       } else {
         setImageHeight("70vh"); // Large screens
       }
@@ -24,6 +33,25 @@ const CarouselComponent = () => {
 
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
+
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await axiosInstance.get("/api/company/settings");
+        const payload = res?.data?.payload || {};
+        const heroBanners = Array.isArray(payload.heroBanners)
+          ? payload.heroBanners
+          : [];
+        setBanners(heroBanners);
+      } catch {
+        // Ignore errors and rely on fallback banners
+      }
+    };
+
+    fetchBanners();
+  }, []);
+
+  const activeBanners = banners && banners.length > 0 ? banners : fallbackBanners;
 
   return (
     <Carousel
@@ -37,7 +65,7 @@ const CarouselComponent = () => {
       showIndicators={false}
       className="w-full"
     >
-      {["/1740719627292.png", "/1740719627309.png", "/1740719627319.jpeg","/banner4.png"].map((src, index) => (
+      {activeBanners.map((src, index) => (
         <div key={index} className="relative w-full" style={{ height: imageHeight }}>
           <Image
             src={src}

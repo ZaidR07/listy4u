@@ -5,6 +5,8 @@ import DataTable from "react-data-table-component";
 import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { svgAvatarDataUrl, handleBrokerImageError } from "@/utils/brokerAvatar";
+
 
 
 
@@ -141,13 +143,14 @@ const Page = () => {
   const columns = [
     { 
       name: "Broker ID", 
-      cell: (row) => (
+      cell: (row: any) => (
         <div className="flex items-center">
-          <img 
-            src={row.photo} 
-            alt="" 
+          {/* <Image 
+            src={row.photo || svgAvatarDataUrl(row.brokername)} 
+            alt={row.brokername ? `${row.brokername} photo` : "broker photo"} 
             className="w-10 h-10 object-cover rounded-full -ml-10" 
-          />
+            onError={(e) => handleBrokerImageError(e, row.brokername)}
+          /> */}
           <span className="whitespace-nowrap text-sm">{row.broker_id}</span>
         </div>
       ), 
@@ -170,12 +173,6 @@ const Page = () => {
       selector: (row) => row.mobile1, 
       width: "120px",
       cell: (row) => <div className="text-sm">{row.mobile1}</div>
-    },
-    { 
-      name: "Secondary", 
-      selector: (row) => row.mobile2, 
-      width: "120px",
-      cell: (row) => <div className="text-sm">{row.mobile2 || '-'}</div>
     },
     { 
       name: "Credits", 
@@ -201,15 +198,15 @@ const Page = () => {
   ];
 
   return (
-    <div className="lg:mt-[12vh] lg:flex bg-gray-100 min-h-[88vh]">
+    <div className="lg:mt-[12vh] lg:flex bg-gray-100 min-h-screen">
       <AdminHeader sidebaropen={sidebaropen} setSidebarOpen={setSidebarOpen} />
 
       <div
-        className={`w-full mt-[10vh] lg:mt-[0vh] px-[5%] py-[4vh] ${
+        className={`w-full mt-[10vh] lg:mt-[0vh] px-4 sm:px-[5%] py-6 sm:py-[4vh] ${
           sidebaropen ? "lg:ml-[23%]" : "lg:ml-[12%]"
         }`}
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-4">
           <h1 className="text-2xl font-bold text-gray-800">View Brokers</h1>
           <span className="text-sm text-gray-500">Manage brokers</span>
         </div>

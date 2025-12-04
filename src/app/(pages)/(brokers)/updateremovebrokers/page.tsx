@@ -11,6 +11,7 @@ import {
   useDeleteBroker,
   useUpdateBrokerCredits,
 } from "@/hooks/brokers";
+import axiosInstance from "@/lib/axios";
 
 const TrashIcon = () => (
   <svg
@@ -54,6 +55,7 @@ const Page = () => {
     mobile1: "",
     mobile2: "",
     address: "",
+    servicelocations: [],
   });
 
   // React Query Hooks
@@ -61,6 +63,20 @@ const Page = () => {
   const updateBrokerMutation = useUpdateBroker();
   const deleteBrokerMutation = useDeleteBroker();
   const updateCreditsMutation = useUpdateBrokerCredits();
+
+  // Location list for service locations dropdown
+  const [locationList, setLocationList] = useState<string[]>([]);
+  useEffect(() => {
+    const fetchLocationList = async () => {
+      try {
+        const response = await axiosInstance.get('/api/getspecificvariable?category=locationlist');
+        if (response.data?.payload) setLocationList(response.data.payload);
+      } catch (e) {
+        console.error('Failed to load location list', e);
+      }
+    };
+    fetchLocationList();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -127,7 +143,13 @@ const Page = () => {
     e.preventDefault();
 
     try {
-      await updateBrokerMutation.mutateAsync({ formdata });
+      const payloadForm = {
+        ...formdata,
+        servicelocations: Array.isArray((formdata as any)?.servicelocations)
+          ? JSON.stringify((formdata as any).servicelocations)
+          : (formdata as any)?.servicelocations,
+      };
+      await updateBrokerMutation.mutateAsync({ formdata: payloadForm });
       toast.success("Broker updated successfully");
       setFormdata({
         broker_id: "",
@@ -137,6 +159,7 @@ const Page = () => {
         mobile1: "",
         mobile2: "",
         address: "",
+        servicelocations: [],
       });
       setUpdateClicked(false);
     } catch (error: any) {
@@ -344,6 +367,8 @@ const Page = () => {
         onClose={() => setUpdateClicked(false)}
         onChange={handleChange}
         onSubmit={UpdateRequest}
+        locationList={locationList}
+        onServiceLocationsChange={(list) => setFormdata((prev: any) => ({ ...prev, servicelocations: list }))}
       />
 
       {/* Credit Modal */}

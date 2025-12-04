@@ -11,6 +11,7 @@ import AddPropertiesPhotos from "@/app/components/AddPropertiesPhotos";
 import { useSelector, useDispatch } from "react-redux";
 import { setlocation } from "@/slices/locationSlice";
 import LocationBox from "@/app/components/LocationBox";
+import { formatPriceWithWords } from "@/utils/indianCurrency";
 import {
   LocationField,
   HighlightsField,
@@ -26,6 +27,44 @@ import {
   useGetSpecificProperty,
   useUpdateProperty,
 } from "@/hooks/properties";
+
+const normalizeToArray = (val) => {
+  const result = [];
+
+  const handleItem = (item) => {
+    if (item === null || item === undefined || item === "") return;
+
+    if (Array.isArray(item)) {
+      item.forEach(handleItem);
+      return;
+    }
+
+    if (typeof item === "string") {
+      const trimmed = item.trim();
+      if (!trimmed) return;
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(handleItem);
+          return;
+        }
+      } catch {}
+
+      trimmed
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean)
+        .forEach((v) => result.push(v));
+      return;
+    }
+
+    result.push(String(item).trim());
+  };
+
+  handleItem(val);
+
+  return Array.from(new Set(result));
+};
 
 const EditPropertyPage = () => {
   const router = useRouter();
@@ -47,8 +86,13 @@ const EditPropertyPage = () => {
   // React Query Hooks
   const { data: variables = {} } = useGetVariables();
   const { data: buildings = [] } = useGetBuildings(locationstate);
-  const { data: propertyData, isLoading: isLoadingProperty } = useGetSpecificProperty(propertyId || "");
+  const { data: propertyData, isLoading: isLoadingProperty } =
+    useGetSpecificProperty(propertyId || "");
+
+  console.log(propertyData);
+  
   const updatePropertyMutation = useUpdateProperty();
+
 
   // Initialize form data with all fields
   const [formdata, setFormdata] = useState({
@@ -65,6 +109,7 @@ const EditPropertyPage = () => {
     balconies: "",
     bathrooms: "",
     price: "",
+    deposit: "",
     postedby: "",
     type: "",
     constructionstatus: "",
@@ -74,6 +119,11 @@ const EditPropertyPage = () => {
     line: "",
     images: [],
     for: "Sale",
+    availablefor: [],
+    reraapproved: [],
+    pgservices: [],
+    sharing: "",
+    totalcapacity: "",
   });
 
   // State to track new images (files)
@@ -94,16 +144,11 @@ const EditPropertyPage = () => {
     }
 
     if (propertyData) {
-      const amenities = propertyData.amenities
-        ? Array.isArray(propertyData.amenities)
-          ? propertyData.amenities
-          : propertyData.amenities.split(",")
-        : [];
-      const highlights = propertyData.highlights
-        ? Array.isArray(propertyData.highlights)
-          ? propertyData.highlights
-          : propertyData.highlights.split(",")
-        : [];
+      const amenities = normalizeToArray(propertyData.amenities);
+      const highlights = normalizeToArray(propertyData.highlights);
+      const pgservices = normalizeToArray(propertyData.pgservices);
+      const reraapproved = normalizeToArray(propertyData.reraapproved);
+      const availablefor = normalizeToArray(propertyData.availablefor);
       setOriginalImages(propertyData.images || []);
 
       const updatedFormData = {
@@ -120,6 +165,7 @@ const EditPropertyPage = () => {
         balconies: propertyData.balconies || "",
         bathrooms: propertyData.bathrooms || "",
         price: propertyData.price || "",
+        deposit: propertyData.deposit || "",
         postedby: propertyData.postedby || user || "",
         type: propertyData.type || "",
         constructionstatus: propertyData.constructionstatus || "",
@@ -129,13 +175,18 @@ const EditPropertyPage = () => {
         line: propertyData.line || "",
         images: propertyData.images || [],
         for: propertyData.for || "Sale",
+        availablefor: availablefor,
+        reraapproved: reraapproved,
+        pgservices: pgservices,
+        sharing: propertyData.sharing || "",
+        totalcapacity: propertyData.totalcapacity || "",
       };
       setFormdata(updatedFormData);
 
       if (propertyData.location) {
         dispatch(setlocation(propertyData.location));
       }
-      
+
       // Set loading to false once data is loaded
       setIsLoading(false);
     }
@@ -195,7 +246,7 @@ const EditPropertyPage = () => {
       images: updatedImages,
     }));
   };
-  
+
   // Remove an image from the existing images
   const removeImage = (index) => {
     setFormdata((prevData) => ({
@@ -203,19 +254,18 @@ const EditPropertyPage = () => {
       images: prevData.images.filter((_, i) => i !== index),
     }));
   };
-  
+
   // Remove a new image from the new images
   const removeNewImage = (index) => {
     setNewImages((prev) => prev.filter((_, i) => i !== index));
-    
+
     // Also remove the preview URL
     // @ts-ignore
     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
-  
+
   // Add a state for preview URLs
   const [previewUrls, setPreviewUrls] = useState([]);
-
 
   // Handle suggestion selection
   const handleSuggestionClick = (suggestion) => {
@@ -235,7 +285,7 @@ const EditPropertyPage = () => {
 
     try {
       const formData = new FormData();
-      
+
       // Append all form fields except images
       for (const key in formdata) {
         if (key !== "images" && key !== "newImages") {
@@ -246,25 +296,28 @@ const EditPropertyPage = () => {
           }
         }
       }
-      
+
       // Append existing images (URLs) as a JSON string
       formData.append("images", JSON.stringify(formdata.images));
-      
+
       // Append new image files
       newImages.forEach((file) => {
         formData.append("new_images", file);
       });
-      
+
       // Append removed images (URLs) as a JSON string
       formData.append("removed_images", JSON.stringify(removedImages));
-      
+
       formData.append("property_id", propertyId);
 
       await updatePropertyMutation.mutateAsync(formData);
       toast.success("Property updated successfully!");
       router.push(`/singleproperty?id=${propertyId}`);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update property. Please try again.");
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to update property. Please try again."
+      );
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -345,7 +398,8 @@ const EditPropertyPage = () => {
           {/* Society/Building Name */}
           <div className="mb-4 relative">
             <label>
-              Society / Building / Plot Name <span className="text-red-700">*</span>
+              Society / Building / Plot Name{" "}
+              <span className="text-red-700">*</span>
             </label>
             <input
               ref={inputRef}
@@ -366,7 +420,9 @@ const EditPropertyPage = () => {
               <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-md mt-1 max-h-60 overflow-y-auto z-10">
                 {suggestions
                   .filter((suggestion) =>
-                    suggestion.toLowerCase().includes(formdata.Societyname.toLowerCase())
+                    suggestion
+                      .toLowerCase()
+                      .includes(formdata.Societyname.toLowerCase())
                   )
                   .map((suggestion, index) => (
                     <div
@@ -415,26 +471,32 @@ const EditPropertyPage = () => {
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label>
-                  Bedrooms <span className="text-red-700">*</span>
-                </label>
-                <div className="flex flex-wrap gap-3 mt-2">
-                  {variables.bhklist?.map((option, index) => (
-                    <label key={index} className="flex gap-2 items-center">
-                      <input
-                        type="radio"
-                        name="bedrooms"
-                        value={option}
-                        checked={formdata.bedrooms === option || formdata.bedrooms?.replace(/\s+/g, '') === option?.replace(/\s+/g, '')}
-                        onChange={handleChange}
-                        required
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
+              {formdata.for.toLowerCase() !== "pg" && (
+                <div className="mb-4">
+                  <label>
+                    Bedrooms <span className="text-red-700">*</span>
+                  </label>
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    {variables.bhklist?.map((option, index) => (
+                      <label key={index} className="flex gap-2 items-center">
+                        <input
+                          type="radio"
+                          name="bedrooms"
+                          value={option}
+                          checked={
+                            formdata.bedrooms === option ||
+                            formdata.bedrooms?.replace(/\s+/g, "") ===
+                              option?.replace(/\s+/g, "")
+                          }
+                          onChange={handleChange}
+                          required
+                        />
+                        <span>{option}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
 
@@ -504,7 +566,7 @@ const EditPropertyPage = () => {
               required
             >
               <option value="">Select</option>
-              {[1, 2, 3, 4, 5].map((num) => (
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                 <option key={num} value={num}>
                   {num}
                 </option>
@@ -512,60 +574,184 @@ const EditPropertyPage = () => {
             </select>
           </div>
 
-          {/* Facing */}
-          <div className="mb-4">
-            <label>Facing</label>
-            <select
-              name="facing"
-              value={formdata.facing}
-              onChange={handleChange}
-              className="border-b-2 border-black w-full mt-2 py-1"
-            >
-              <option value="">Select Direction</option>
-              <option value="East">East</option>
-              <option value="West">West</option>
-              <option value="North">North</option>
-              <option value="South">South</option>
-            </select>
-          </div>
+          {formdata.for.toLowerCase() !== "pg" && (
+            <div className="mb-4">
+              <label>Property Age (Yrs)</label>
+              <input
+                name="propertyage"
+                value={formdata.propertyage}
+                onChange={handleChange}
+                type="number"
+                className="border-b-2 border-black w-full"
+              />
+            </div>
+          )}
 
-          {/* Construction Status */}
-          <div className="mb-4">
-            <label>
-              Construction Status <span className="text-red-700">*</span>
-            </label>
-            <select
-              name="constructionstatus"
-              value={formdata.constructionstatus}
-              onChange={handleChange}
-              className="border-b-2 border-black w-full mt-2 py-1"
-              required
-            >
-              <option value="">Select Status</option>
-              {variables.constructionstatuslist?.map((item, index) => (
-                <option key={index} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
+          {formdata.for.toLowerCase() === "rent" && (
+            <div className="mb-4">
+              <label>
+                Available for <span className="text-red-700">*</span>
+              </label>
+              <div className="flex flex-wrap gap-4 mt-2">
+                {variables.availableforlist && variables.availableforlist.map((item, index) => {
+                  const checked = (formdata.availablefor || []).includes(item);
+                  return (
+                    <label key={index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setFormdata((prev) => ({
+                            ...prev,
+                            availablefor: checked
+                              ? prev.availablefor.filter((v) => v !== item)
+                              : [...(prev.availablefor || []), item],
+                          }));
+                        }}
+                      />
+                      <span>{item}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-          {/* Property Age */}
-          <div className="mb-4">
-            <label>Property Age (Yrs)</label>
-            <input
-              name="propertyage"
-              value={formdata.propertyage}
-              onChange={handleChange}
-              type="number"
-              className="border-b-2 border-black w-full"
-            />
-          </div>
+          {formdata.for.toLowerCase() === "sale" && currentpropertytype !== 3 && (
+            <>
+              {/* Facing */}
+              <div className="mb-4">
+                <label>Facing</label>
+                <select
+                  name="facing"
+                  value={formdata.facing}
+                  onChange={handleChange}
+                  className="border-b-2 border-black w-full mt-2 py-1"
+                >
+                  <option value="">Select Direction</option>
+                  <option value="East">East</option>
+                  <option value="West">West</option>
+                  <option value="North">North</option>
+                  <option value="South">South</option>
+                </select>
+              </div>
+              {/* Construction Status */}
+              <div className="mb-4">
+                <label>
+                  Construction Status <span className="text-red-700">*</span>
+                </label>
+                <select
+                  name="constructionstatus"
+                  value={formdata.constructionstatus}
+                  onChange={handleChange}
+                  className="border-b-2 border-black w-full mt-2 py-1"
+                  required
+                >
+                  <option value="">Select Status</option>
+                  {variables.constructionstatuslist &&
+                    variables.constructionstatuslist.length > 0 &&
+                    variables.constructionstatuslist.map((item, index) => (
+                      <option key={index} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* RERA Approved (Buy) */}
+              <div className="mb-4">
+                <label>RERA Approved</label>
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {(variables.reraapprovedlist || []).map((item, index) => {
+                    const checked = (formdata.reraapproved || []).includes(item);
+                    return (
+                      <label key={index} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setFormdata((prev) => ({
+                              ...prev,
+                              reraapproved: checked
+                                ? prev.reraapproved.filter((v) => v !== item)
+                                : [...(prev.reraapproved || []), item],
+                            }));
+                          }}
+                        />
+                        <span>{item}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* PG specific fields */}
+          {formdata.for.toLowerCase() === "pg" && (
+            <>
+              <div className="mb-4">
+                <label>PG Services</label>
+                <div className="flex flex-wrap gap-4 mt-2">
+                  {(variables.pgserviceslist || []).map((item, index) => {
+                    const checked = (formdata.pgservices || []).includes(item);
+                    return (
+                      <label key={index} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setFormdata((prev) => ({
+                              ...prev,
+                              pgservices: checked
+                                ? prev.pgservices.filter((v) => v !== item)
+                                : [...(prev.pgservices || []), item],
+                            }));
+                          }}
+                        />
+                        <span>{item}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label>Sharing Option</label>
+                <select
+                  name="sharing"
+                  value={formdata.sharing}
+                  onChange={handleChange}
+                  className="border-b-2 border-black w-full mt-2 py-1"
+                >
+                  <option value="">Select</option>
+                  {(variables.sharinglist || []).map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label>Total Capacity</label>
+                <select
+                  name="totalcapacity"
+                  value={formdata.totalcapacity}
+                  onChange={handleChange}
+                  className="border-b-2 border-black w-full mt-2 py-1"
+                >
+                  <option value="">Select</option>
+                  {(variables.totalcapacitylist || []).map((item, index) => (
+                    <option key={index} value={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           {/* Price */}
           <div className="mb-4">
             <label>
-              Price (₹) <span className="text-red-700">*</span>
+              {formdata.for.toLowerCase() === "sale" ? "Price" : "Rent"} (₹) <span className="text-red-700">*</span>
             </label>
             <input
               name="price"
@@ -575,7 +761,31 @@ const EditPropertyPage = () => {
               className="border-b-2 border-black w-full"
               required
             />
+            {formdata.price && (
+              <div className="text-sm text-gray-600 mt-1">
+                {formatPriceWithWords(formdata.price)}
+              </div>
+            )}
           </div>
+
+          {/* Deposit - Only for Rent and PG */}
+          {(formdata.for.toLowerCase() === "rent" || formdata.for.toLowerCase() === "pg") && (
+            <div className="mb-4">
+              <label>Deposit (₹)</label>
+              <input
+                name="deposit"
+                value={formdata.deposit}
+                onChange={handleChange}
+                type="number"
+                className="border-b-2 border-black w-full"
+              />
+              {formdata.deposit && (
+                <div className="text-sm text-gray-600 mt-1">
+                  {formatPriceWithWords(formdata.deposit)}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Address */}
           <div className="mb-4">
@@ -748,12 +958,16 @@ const EditPropertyPage = () => {
                         setFormdata((prevData) => ({
                           ...prevData,
                           amenities: isSelected
-                            ? prevData.amenities.filter((amenity) => amenity !== item)
+                            ? prevData.amenities.filter(
+                                (amenity) => amenity !== item
+                              )
                             : [...prevData.amenities, item],
                         }));
                       }}
                       className={`p-2 flex items-center gap-2 rounded-xl ${
-                        isSelected ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
+                        isSelected
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-200 text-black"
                       }`}
                     >
                       <span>{item}</span>
@@ -778,9 +992,9 @@ const EditPropertyPage = () => {
             setRemovedImages={setRemovedImages}
             onExistingImagesChange={(index) => {
               // Remove image from formdata.images
-              setFormdata(prevData => ({
+              setFormdata((prevData) => ({
                 ...prevData,
-                images: prevData.images.filter((_, i) => i !== index)
+                images: prevData.images.filter((_, i) => i !== index),
               }));
             }}
           />
@@ -800,3 +1014,25 @@ const EditPropertyPage = () => {
 };
 
 export default EditPropertyPage;
+// Remove image from formdata.images
+//               setFormdata((prevData) => ({
+//                 ...prevData,
+//                 images: prevData.images.filter((_, i) => i !== index),
+//               }));
+//             }}
+//           />
+
+//           {/* Submit Button */}
+//           <button
+//             type="submit"
+//             className="bg-[#FF5D00] text-white px-4 py-2 rounded-md mt-8 w-full"
+//             disabled={isLoading}
+//           >
+//             {isLoading ? "Processing..." : "Update Property"}
+//           </button>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// };
+

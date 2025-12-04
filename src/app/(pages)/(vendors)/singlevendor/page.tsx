@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/app/components/Header";
 import axiosInstance from "@/lib/axios";
+import Register from "@/app/components/Register";
+import Cookies from "js-cookie";
 
 interface VendorProduct {
   _id: string;
@@ -23,6 +25,7 @@ const Page = () => {
   const [products, setProducts] = useState<VendorProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
+  const [registeropen, setRegisterOpen] = useState(false);
   const productsPerPage = 4;
 
   const calculateDiscount = (mrp: number, sellingPrice: number) => {
@@ -41,6 +44,12 @@ const Page = () => {
   };
 
   useEffect(() => {
+    const token = Cookies.get('user') || Cookies.get('owner') || Cookies.get('broker');
+    if (!token) {
+      setRegisterOpen(true);
+      setLoading(false);
+      return;
+    }
     const fetchVendor = async () => {
       if (!id) {
         setError("Missing vendor id");
@@ -63,6 +72,27 @@ const Page = () => {
     };
     fetchVendor();
   }, [id]);
+
+  useEffect(() => {
+    if (!registeropen) {
+      const token = Cookies.get('user') || Cookies.get('owner') || Cookies.get('broker');
+      if (token && !vendor && id) {
+        (async () => {
+          try {
+            setLoading(true);
+            const res = await axiosInstance.get('/api/getsinglevendor', { params: { id } });
+            setVendor(res.data.payload);
+            setError("");
+            fetchVendorProducts(id);
+          } catch (e: any) {
+            setError(e?.response?.data?.message || "Failed to load vendor");
+          } finally {
+            setLoading(false);
+          }
+        })();
+      }
+    }
+  }, [registeropen]);
 
   const fetchVendorProducts = async (vendorId: string) => {
     try {
@@ -118,6 +148,22 @@ const Page = () => {
                   <div className="space-y-1 text-gray-600">
                     <p className="text-lg">{vendor.address}</p>
                     <p className="text-lg">{vendor.emailid}</p>
+                    <p className="text-lg">
+                      Service Locations: {(() => {
+                        const sl = vendor?.servicelocations;
+                        if (Array.isArray(sl)) {
+                          return sl.join(", ");
+                        } else if (typeof sl === 'string') {
+                          try {
+                            const parsed = JSON.parse(sl);
+                            return Array.isArray(parsed) ? parsed.join(", ") : sl;
+                          } catch {
+                            return sl;
+                          }
+                        }
+                        return "-";
+                      })()}
+                    </p>
                   </div>
                 </div>
                 
@@ -257,6 +303,7 @@ const Page = () => {
           </div>
         ) : null}
       </div>
+      <Register registeropen={registeropen} setRegisterOpen={setRegisterOpen} />
     </div>
   );
 };

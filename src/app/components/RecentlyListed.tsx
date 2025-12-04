@@ -31,8 +31,8 @@ const RecentlyListed = () => {
   };
 
   return (
-    <div className="mt-[10vh] mx-2 py-6 lg:pt-8 text-xl lg:text-3xl px-[3%] gap-2 bg-[#fef6f0] shadow-inner rounded-2xl">
-      <h1 className="text-[#FF5D00] text-center">Recently Listed</h1>
+    <div className="mt-[10vh] mx-2 py-6 lg:pt-8 text-xl lg:text-3xl px-[3%] gap-2 bg-[#fef6f0] shadow-inner rounded-2xl landscape:mt-[20vh] lg:landscape:mt-[10vh] md:mt-[8vh]">
+      <h1 className="text-[#FF5D00] text-center text-2xl sm:text-3xl ">Recently Listed</h1>
 
       {/* 🔹 For Sale Section */}
       {propertieslist.some((property) => property.for === "Sale") && (
@@ -138,13 +138,13 @@ const RecentlyListed = () => {
 const PropertyCard = ({ property, router }) => (
   <div
     onClick={() => router.push(`singleproperty?id=${property.property_id}`)}
-    className="bg-transparent min-w-[40%] max-w-[40%] xl:min-w-[25%] xl:max-w-[25%] px-2 py-2 relative rounded-lg border-t-[1px] border-[#fa9c66] shadow-md shadow-[#fa9c66] cursor-pointer"
+    className="bg-transparent min-w-[60%] max-w-[60%] md:min-w-[40%] md:max-w-[40%] xl:min-w-[25%] xl:max-w-[25%] px-2 py-2 relative rounded-lg border-t-[1px] border-[#fa9c66] shadow-md shadow-[#fa9c66] cursor-pointer"
   >
     <div className="relative">
       <img
         src={property.images?.length > 0 ? property.images[0] : "/rent.png"}
         alt="Property"
-        className="rounded-lg w-full lg:h-[40vh] h-[110px] object-cover"
+        className="rounded-lg w-full aspect-square lg:h-[40vh]  object-cover"
       />
       <div className="absolute bottom-2 left-3 rounded-lg p-1 text-sm bg-orange-100 text-[#FF5D00]">
         {priceconverter(property.price)}

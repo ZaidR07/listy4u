@@ -50,7 +50,14 @@ const Page = () => {
     mobile2: "",
     address: "",
     category: "",
+    servicelocations: [],
   });
+  
+  // Location dropdown states for update form
+  const [locationList, setLocationList] = useState([]);
+  const [locationSearch, setLocationSearch] = useState("");
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState([]);
 
   const fetchVendorslist = async () => {
     try {
@@ -62,12 +69,82 @@ const Page = () => {
     }
   };
 
+  // Fetch location list
+  useEffect(() => {
+    const fetchLocationList = async () => {
+      try {
+        const response = await axiosInstance.get('/api/getspecificvariable?category=locationlist');
+        if (response.data.payload) {
+          setLocationList(response.data.payload);
+        }
+      } catch (error) {
+        console.error("Error fetching location list:", error);
+      }
+    };
+    fetchLocationList();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showLocationDropdown && !event.target.closest('.location-dropdown-container')) {
+        setShowLocationDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showLocationDropdown]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormdata((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Handle location selection for update form
+  const handleLocationSelect = (location) => {
+    if (!selectedLocations.includes(location)) {
+      const newSelectedLocations = [...selectedLocations, location];
+      setSelectedLocations(newSelectedLocations);
+      setFormdata(prev => ({ ...prev, servicelocations: newSelectedLocations }));
+    }
+    setLocationSearch("");
+    setShowLocationDropdown(false);
+  };
+
+  // Handle location removal for update form
+  const handleLocationRemove = (locationToRemove) => {
+    const newSelectedLocations = selectedLocations.filter(loc => loc !== locationToRemove);
+    setSelectedLocations(newSelectedLocations);
+    setFormdata(prev => ({ ...prev, servicelocations: newSelectedLocations }));
+  };
+
+  // Filter locations based on search for update form
+  const filteredLocations = locationList.filter(location => 
+    location.toLowerCase().includes(locationSearch.toLowerCase()) &&
+    !selectedLocations.includes(location)
+  );
+
+  // Handle update button click to populate form with existing data
+  const handleUpdateClick = (vendor) => {
+    setFormdata({
+      vendor_id: vendor.vendor_id,
+      vendorname: vendor.vendorname,
+      companyname: vendor.companyname,
+      emailid: vendor.emailid,
+      mobile1: vendor.mobile1,
+      mobile2: vendor.mobile2 || "",
+      address: vendor.address || "",
+      category: vendor.category || "",
+      servicelocations: vendor.servicelocations || [],
+    });
+    setSelectedLocations(vendor.servicelocations || []);
+    setUpdateClicked(true);
   };
 
   const openCreditModal = (vendor_id: string) => {
@@ -128,7 +205,15 @@ const Page = () => {
     e.preventDefault();
 
     try {
-      await axiosInstance.post('/api/updatevendor', formdata);
+      // Prepare form data with service locations as JSON string
+      const updateData = {
+        ...formdata,
+        servicelocations: Array.isArray(formdata.servicelocations)
+          ? JSON.stringify(formdata.servicelocations)
+          : formdata.servicelocations,
+      };
+
+      await axiosInstance.post('/api/updatevendor', updateData);
       toast.success("Vendor updated successfully");
       setFormdata({
         vendor_id: "",
@@ -139,7 +224,9 @@ const Page = () => {
         mobile2: "",
         address: "",
         category: "",
+        servicelocations: [],
       });
+      setSelectedLocations([]);
       setUpdateClicked(false);
       fetchVendorslist();
     } catch (error: any) {
@@ -191,10 +278,7 @@ const Page = () => {
       name: "",
       cell: (row) => (
         <button
-          onClick={() => {
-            setFormdata(row);
-            setUpdateClicked(true);
-          }}
+          onClick={() => handleUpdateClick(row)}
         >
           <PenIcon />
         </button>
@@ -317,8 +401,8 @@ const Page = () => {
 
       {/* Update Drawer */}
       {updatecliked && (
-        <div className="fixed inset-0 bg-black/50 z-[99999] flex items-center justify-end">
-          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 z-[99999] flex items-center justify-center mt-[10vh]">
+          <div className="bg-white w-full max-w-3xl max-h-[80vh] overflow-y-auto shadow-2xl rounded-xl">
             <div className="bg-orange-500 p-4 flex items-center">
               <h2 className="text-white text-xl font-bold">Update Vendor</h2>
               <button
@@ -330,7 +414,7 @@ const Page = () => {
                 </svg>
               </button>
             </div>
-            <form onSubmit={UpdateRequest} className="p-6 space-y-4">
+            <form onSubmit={UpdateRequest} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Vendor ID</label>
                 <input
@@ -403,7 +487,7 @@ const Page = () => {
                   className="w-full border rounded px-3 py-2"
                 />
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1">Address</label>
                 <textarea
                   name="address"
@@ -413,12 +497,71 @@ const Page = () => {
                   rows={3}
                 />
               </div>
-              <button
-                type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded font-medium"
-              >
-                Update Vendor
-              </button>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">Service Locations</label>
+                <div className="relative location-dropdown-container">
+                  {/* Selected locations display */}
+                  <div className="min-h-[38px] border border-gray-300 rounded p-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition cursor-text"
+                       onClick={() => setShowLocationDropdown(true)}>
+                    {selectedLocations.length === 0 ? (
+                      <span className="text-gray-400 text-sm">Click to add service locations...</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedLocations.map((location, index) => (
+                          <span key={index} className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                            {location}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLocationRemove(location);
+                              }}
+                              className="text-orange-500 hover:text-orange-700 font-bold text-xs"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Dropdown */}
+                  {showLocationDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-40 overflow-y-auto">
+                      <input
+                        type="text"
+                        placeholder="Search locations..."
+                        value={locationSearch}
+                        onChange={(e) => setLocationSearch(e.target.value)}
+                        className="w-full px-3 py-2 border-b border-gray-200 outline-none text-sm"
+                        autoFocus
+                      />
+                      {filteredLocations.length === 0 ? (
+                        <div className="px-3 py-2 text-gray-500 text-xs">No locations found</div>
+                      ) : (
+                        filteredLocations.map((location, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleLocationSelect(location)}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-xs"
+                          >
+                            {location}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded font-medium"
+                >
+                  Update Vendor
+                </button>
+              </div>
             </form>
           </div>
         </div>

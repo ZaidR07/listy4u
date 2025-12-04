@@ -1,4 +1,6 @@
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import axiosInstance from "@/lib/axios";
 
 const WhatsappIcon = () => {
   return (
@@ -54,9 +56,45 @@ const YoutubeIcon = () => {
 
 const Footer = () => {
   const router = useRouter();
+  const [contact, setContact] = useState({
+    contactNumber1: "",
+    contactNumber2: "",
+    address: "",
+    whatsapp: "",
+    instagram: "",
+    facebook: "",
+  });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await axiosInstance.get("/api/company/settings");
+        const payload = res?.data?.payload || {};
+        setContact({
+          contactNumber1: payload.contactNumber1 || "",
+          contactNumber2: payload.contactNumber2 || "",
+          address: payload.address || "",
+          whatsapp: payload.whatsapp || "",
+          instagram: payload.instagram || "",
+          facebook: payload.facebook || "",
+        });
+      } catch {
+        // Ignore errors and keep defaults
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  const primaryPhone = contact.contactNumber1 || "";
+  const secondaryPhone = contact.contactNumber2 || "";
+  const addressText = contact.address || "";
+  const whatsappLink = contact.whatsapp || "";
+  const instagramLink = contact.instagram || "";
+  const facebookLink = contact.facebook || "#";
   return (
     <div className="bg-[#FF5D00] text-white pb-4 pt-[4vh]">
-      <div className="w-full px-[5%] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-6">
+      <div className="w-full px-[5%] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-6">
         <section className="border-b border-white/30 pb-3 mb-3 lg:border-none lg:pb-0 lg:mb-0 lg:col-span-3 lg:order-1">
           <h1 className="text-lg lg:text-2xl text-[#fff] mb-2">Quick Links</h1>
           <ul className="hover:cursor-pointer text-sm lg:text-lg lg:mt-1 space-y-2 leading-6">
@@ -64,12 +102,18 @@ const Footer = () => {
             <li onClick={() => router.push("/")}>Listy4u</li>
             <li onClick={() => router.push("/#mobile-app")}>Mobile App</li>
             <li onClick={() => router.push("/plans")}>Our Services</li>
-            <li onClick={() => router.push("/postproperty")}>Post Your Property</li>
+            {/* <li onClick={() => router.push("/postproperty")}>Post Your Property</li> */}
             <li onClick={() => router.push("/brokerslist")}>Find an Agent</li>
             <li onClick={() => router.push("/contact")}>Customer Service</li>
-            <li onClick={() => router.push("/buyproperties?view=Sale")}>Buy Properties</li>
-            <li onClick={() => router.push("/buyproperties?view=Rent")}>Rent Properties</li>
-            <li onClick={() => router.push("/buyproperties?view=PG")}>Find PG</li>
+            <li onClick={() => router.push("/buyproperties?view=Sale")}>
+              Buy Properties
+            </li>
+            <li onClick={() => router.push("/buyproperties?view=Rent")}>
+              Rent Properties
+            </li>
+            <li onClick={() => router.push("/buyproperties?view=PG")}>
+              Find PG
+            </li>
           </ul>
         </section>
         <section className="border-b border-white/30 pb-3 mb-3 lg:border-none lg:pb-0 lg:mb-0 lg:col-span-3 lg:order-2">
@@ -78,26 +122,67 @@ const Footer = () => {
             <li onClick={() => router.push("/about")}>About Us</li>
             <li onClick={() => router.push("/contact")}>Contact Us</li>
             <li onClick={() => router.push("/careers")}>Careers with Us</li>
+            <li onClick={() => router.push("/blogs")}>Blogs</li>
             <li onClick={() => router.push("/terms")}>Terms & Conditions</li>
             <li onClick={() => router.push("/feedback")}>Feedback</li>
-            <li onClick={() => router.push("/report-problem")}>Report a Problem</li>
-            <li onClick={() => router.push("/privacy-policy")}>Privacy Policy</li>
+            <li onClick={() => router.push("/report-problem")}>
+              Report a Problem
+            </li>
+            <li onClick={() => router.push("/privacy-policy")}>
+              Privacy Policy
+            </li>
           </ul>
         </section>
-        <section className="lg:col-span-4 lg:order-3">
+        <section className="border-b border-white/30 pb-3 mb-3 lg:border-none lg:pb-0 lg:mb-0 lg:col-span-3 lg:order-3">
+          <h1 className="text-lg lg:text-2xl text-[#fff] mb-2">Contact</h1>
+          <div className="text-sm lg:text-lg lg:mt-1 space-y-1 leading-6">
+            <p className="opacity-90">Address : </p>
+            <p className="opacity-90">{addressText}</p>
+
+            <p className="font-semibold mt-3">Contact :</p>
+            <div className="flex gap-2">
+              <p>
+                <a
+                  href={`tel:${primaryPhone.replace(/\s+/g, "")}`}
+                  className="underline"
+                >
+                  {primaryPhone}
+                </a>
+              </p>,
+              {secondaryPhone && (
+                <p>
+                  <a
+                    href={`tel:${secondaryPhone.replace(/\s+/g, "")}`}
+                    className="underline"
+                  >
+                    {secondaryPhone}
+                  </a>
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+        <section className="lg:col-span-3 lg:order-4">
           {/* Header visible on desktop */}
-          <h1 className="hidden lg:block text-lg lg:text-2xl text-[#fff] mb-2">Social Media</h1>
+          <h1 className="hidden lg:block text-lg lg:text-2xl text-[#fff] mb-2">
+            Social Media
+          </h1>
           {/* Icons horizontal at all sizes */}
           <ul className="hover:cursor-pointer flex gap-5 items-center leading-6 lg:mt-2 justify-start">
             <li className="flex items-center justify-center">
-              <div className="p-3 md:p-2 rounded-full bg-white/10">
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3 md:p-2 rounded-full bg-white/10 inline-flex"
+              >
                 <WhatsappIcon />
-              </div>
+              </a>
               <span className="hidden ml-2">Whatsapp</span>
             </li>
             <li className="flex items-center justify-center">
               <a
-                href="https://www.instagram.com/listy4u?igsh=ZzJwNnR1ZGdkYWdt"
+                href={instagramLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3 md:p-2 rounded-full bg-white/10 inline-flex"
@@ -107,9 +192,14 @@ const Footer = () => {
               <span className="hidden ml-2">Instagram</span>
             </li>
             <li className="flex items-center justify-center">
-              <div className="p-3 md:p-2 rounded-full bg-white/10">
+              <a
+                href={facebookLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3 md:p-2 rounded-full bg-white/10 inline-flex"
+              >
                 <FacebookIcon />
-              </div>
+              </a>
               <span className="hidden ml-2">Facebook</span>
             </li>
             <li className="flex items-center justify-center">
@@ -126,7 +216,9 @@ const Footer = () => {
         <h1 className="text-xl border-b-2 inline-block mb-2">Company Moto</h1>
         <br />
         <span className="text-sm sm:text-base leading-6">
-          Listy4u — Connecting Homes, Services & People. Find properties, book trusted home services, and make every step of home living simple, fast, and reliable.
+          Listy4u — Connecting Homes, Services & People. Find properties, book
+          trusted home services, and make every step of home living simple,
+          fast, and reliable.
         </span>
       </section>
       <div className="w-[90%] mx-[5%] h-[1px] bg-[#fff] mt-6 md:mt-8 lg:hidden"></div>
@@ -135,7 +227,9 @@ const Footer = () => {
         <h1 className="text-2xl border-b-2 inline-block mb-2">Company Moto</h1>
         <br />
         <span className="text-lg leading-7 opacity-90">
-          Listy4u — Connecting Homes, Services & People. Find properties, book trusted home services, and make every step of home living simple, fast, and reliable.
+          Listy4u — Connecting Homes, Services & People. Find properties, book
+          trusted home services, and make every step of home living simple,
+          fast, and reliable.
         </span>
       </section>
       <section className="mt-6 md:mt-8 lg:mt-10">

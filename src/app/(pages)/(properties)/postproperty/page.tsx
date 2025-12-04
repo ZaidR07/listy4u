@@ -13,6 +13,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 import { setlocation } from "@/slices/locationSlice";
 import LocationBox from "@/app/components/LocationBox";
+import { formatPriceWithWords } from "@/utils/indianCurrency";
 
 import {
   LocationField,
@@ -94,7 +95,7 @@ const Page = () => {
         const payload = JSON.parse(atob(userCookie.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
         setUser(payload.email); // Set email
         setUserId(payload.id); // Set user_id or owner_id from token
-        console.log("User authenticated:", { email: payload.email, id: payload.id, role: payload.role });
+        // console.log("User authenticated:", { email: payload.email, id: payload.id, role: payload.role });
       } catch (error) {
         console.error("Error decoding user token:", error);
         // Fallback to old format if JWT decode fails
@@ -127,6 +128,7 @@ const Page = () => {
     balconies: "",
     bathrooms: "",
     price: "",
+    deposit: "",
     postedby: "", // Will be set to broker_id, owner_id, or user_id
     postedbytype: "", // Will be set to value of 'who' (broker/owner/user)
     type: "", // Select field for property type
@@ -136,7 +138,7 @@ const Page = () => {
     location: "",
     line: "",
     images: [],
-    availablefor: "",
+    availablefor: [],
     reraapproved: [],
     pgservices: [],
     sharing: "",
@@ -348,6 +350,7 @@ const Page = () => {
         balconies: "",
         bathrooms: "",
         price: "",
+        deposit: "",
         postedby: currentPostedBy, // Keep the broker_id, owner_id, or user_id
         postedbytype: who || "user",
         type: "",
@@ -357,7 +360,7 @@ const Page = () => {
         location: "",
         line: "",
         images: [],
-        availablefor: "",
+        availablefor: [],
         reraapproved: [],
         pgservices: [],
         sharing: "",
@@ -394,6 +397,7 @@ const Page = () => {
       balconies: "",
       bathrooms: "",
       price: "",
+      deposit: "",
       postedby: currentPostedBy || "",
       postedbytype: who || "user",
       type: "",
@@ -403,7 +407,7 @@ const Page = () => {
       location: "",
       line: "",
       images: [],
-      availablefor: "",
+      availablefor: [],
       reraapproved: [],
       pgservices: [],
       sharing: "",
@@ -618,6 +622,7 @@ const Page = () => {
                   </div>
                 </div>
               </div>
+               {forValue !== "PG" && (
               <div className="mb-4">
                 <label>
                   Bedrooms <span className="text-red-700 text-xl">*</span>
@@ -632,13 +637,14 @@ const Page = () => {
                           value={option}
                           checked={formdata.bedrooms === option}
                           onChange={handleChange}
-                          required
+                          required={forValue !== "PG"}
                         />
                         <span>{option}</span>
                       </label>
                     ))}
                 </div>
               </div>
+               )}
             </>
           )}
 
@@ -740,18 +746,28 @@ const Page = () => {
               <label>
                 Available for <span className="text-red-700">*</span>
               </label>
-              <select
-                name="availablefor"
-                value={formdata.availablefor}
-                onChange={handleChange}
-                className="border-b-2 border-black w-full mt-2 py-1"
-                required
-              >
-                <option value="">Select</option>
-                {variables.availableforlist && variables.availableforlist.map((item, index) => (
-                  <option key={index} value={item}>{item}</option>
-                ))}
-              </select>
+              <div className="flex flex-wrap gap-4 mt-2">
+                {variables.availableforlist && variables.availableforlist.map((item, index) => {
+                  const checked = (formdata.availablefor || []).includes(item);
+                  return (
+                    <label key={index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setFormdata((prev) => ({
+                            ...prev,
+                            availablefor: checked
+                              ? prev.availablefor.filter((v) => v !== item)
+                              : [...(prev.availablefor || []), item],
+                          }));
+                        }}
+                      />
+                      <span>{item}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -888,7 +904,7 @@ const Page = () => {
 
           {/* Price */}
           <div className="mb-4">
-            <label> {forValue == "Sale" ? "Price" : "Rent"} (₹)</label>
+            <label> {forValue == "Sale" ? "Price" : "Rent"} (₹) <span className="text-red-700">*</span></label>
             <input
               name="price"
               value={formdata.price}
@@ -897,11 +913,35 @@ const Page = () => {
               className="border-b-2 border-black w-full"
               required
             />
+            {formdata.price && (
+              <div className="text-sm text-gray-600 mt-1">
+                {formatPriceWithWords(formdata.price)}
+              </div>
+            )}
           </div>
+
+          {/* Deposit - Only for Rent and PG */}
+          {(forValue === "Rent" || forValue === "PG") && (
+            <div className="mb-4">
+              <label>Deposit (₹)</label>
+              <input
+                name="deposit"
+                value={formdata.deposit}
+                onChange={handleChange}
+                type="number"
+                className="border-b-2 border-black w-full"
+              />
+              {formdata.deposit && (
+                <div className="text-sm text-gray-600 mt-1">
+                  {formatPriceWithWords(formdata.deposit)}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Address */}
           <div className="mb-4">
-            <label>Address</label>
+            <label>Address<span className="text-red-700">*</span></label>
             <input
               name="address"
               value={formdata.address}
@@ -1168,10 +1208,7 @@ const Page = () => {
       )}
       {!forbox && locationstate == "" && (
         <div className="mt-[10vh]">
-          <LocationBox
-            locationstate={locationstate}
-            setlocation={(value) => dispatch(setlocation(value))}
-          />
+          <LocationBox />
         </div>
       )}
       {isLoading && (

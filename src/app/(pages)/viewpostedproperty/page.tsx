@@ -11,34 +11,34 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 const page = () => {
   const [propertieslist, setPropertieslist] = useState([
-    {
-      Societyname: "",
-      floor: "",
-      bedrooms: "",
-      area: "",
-      areaunits: "",
-      buildingfloors: "",
-      address: "",
-      amenities: [], // array of strings
-      facing: "",
-      propertyage: "",
-      balconies: "",
-      bathrooms: "",
-      price: "",
-      postedby: "",
-      type: "",
-      constructionstatus: "",
-      furnishing: "",
-      highlights: [], // array of strings
-      location: "",
-      line: "",
-      for: "",
-      property_id: null, // or 0 if you prefer default numeric
-      active: false,
-      images: [], // array of image URLs or objects
-      postedby_id: null,
-      postedbytype: null,
-    },
+    // {
+    //   Societyname: "",
+    //   floor: "",
+    //   bedrooms: "",
+    //   area: "",
+    //   areaunits: "",
+    //   buildingfloors: "",
+    //   address: "",
+    //   amenities: [], // array of strings
+    //   facing: "",
+    //   propertyage: "",
+    //   balconies: "",
+    //   bathrooms: "",
+    //   price: "",
+    //   postedby: "",
+    //   type: "",
+    //   constructionstatus: "",
+    //   furnishing: "",
+    //   highlights: [], // array of strings
+    //   location: "",
+    //   line: "",
+    //   for: "",
+    //   property_id: null, // or 0 if you prefer default numeric
+    //   active: false,
+    //   images: [], // array of image URLs or objects
+    //   postedby_id: null,
+    //   postedbytype: null,
+    // },
   ]);
 
   const [user, setUser] = useState<string | null>(null); // State for owner/user token
@@ -136,15 +136,15 @@ const page = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
+console.log(propertieslist.length, propertieslist)
   return (
     <div className="">
       <Header />
       {/* Properties List */}:
-      <section className=" px-[5%] w-full mt-[14vh] py-5 flex flex-col lg:grid lg:grid-cols-2 2xl:grid-cols-3   gap-4 " >
+      <section className=" px-[5%] w-full mt-[14vh] py-5 flex flex-col lg:grid lg:grid-cols-2 2xl:grid-cols-3 gap-4">
         
-        {Array.isArray(propertieslist) && propertieslist.length > 0 ? (
-          propertieslist.map((item, key) => (
+        {Array.isArray(propertieslist) && propertieslist.length > 0  ? ( 
+          propertieslist.map((item, key) => ( 
             <div
               className="w-full lg:flex-1 border-2  border-gray-300 shadow-md rounded-xl flex items-center gap-[4%] justify-between px-[2.5%] pb-4 pt-3 bg-white"
               key={key}
@@ -152,7 +152,7 @@ const page = () => {
               <div className="w-[35%] h-full rounded-xl">
                 <img
                   src={item.images[0]}
-                  className="h-auto w-[100%]   object-coverr"
+                  className="h-auto w-[100%] object-cover"
                   alt=""
                 />
               </div>

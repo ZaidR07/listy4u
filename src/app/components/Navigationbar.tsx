@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "@/lib/axios";
 import Cookies from "js-cookie";
 
-const Navigationbar = ({ isOpen }) => {
+const Navigationbar = ({ isOpen, setIsOpen }) => {
   const [expanded, setExpanded] = useState(null);
 
   const router = useRouter(); // Initialize router
@@ -86,10 +86,10 @@ const Navigationbar = ({ isOpen }) => {
 
   return (
     <motion.nav
-      initial={{ y: "100%" }}
-      animate={{ y: isOpen ? "0%" : "100%" }}
-      transition={{ duration: 0.5, ease: "easeInOut" }}
-      className="w-[100vw] pt-24 fixed bottom-0 h-[92vh] bg-[#FF5D00] shadow-2xl p-6 flex flex-col text-white"
+      initial={{ x: "100%" }}
+      animate={{ x: isOpen ? "0%" : "100%" }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+      className="w-[100vw] md:w-[60vw] pt-24 fixed md:pt-32 top-0 right-0 h-[100vh] bg-[#FF5D00] shadow-2xl p-6 flex flex-col text-white overflow-y-auto"
     >
       <ul className="space-y-4">
         {/* Buy Section */}
@@ -113,10 +113,12 @@ const Navigationbar = ({ isOpen }) => {
                   <li
                     key={index}
                     className="text-sm cursor-pointer hover:text-gray-300"
-                    onClick={() =>
+                    onClick={() =>{
                       handleNavigation(
                         `/buyproperties?type=${item.name}&view=Sale`
                       )
+                    setIsOpen(false)
+                    }
                     }
                   >
                     {item.name}
@@ -148,7 +150,10 @@ const Navigationbar = ({ isOpen }) => {
                   <li className="list-disc">
                     <span
                       className="text-sm cursor-pointer text-orange-200 hover:text-orange-500 hover:underline"
-                      onClick={() => handleNavigation("/postproperty?who=owner")}
+                      onClick={() => {
+                        handleNavigation("/postproperty?who=owner")
+                        setIsOpen(false)
+                      }}
                     >
                       Post Property
                     </span>

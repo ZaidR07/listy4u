@@ -554,7 +554,7 @@ export const PropertyFilterSidebar = ({
         </button>
         <button
           onClick={onClose}
-          className="bg-[#f3701f] py-2 px-4 rounded-xl text-white"
+          className="bg-[#f3701f] py-2 px-4 rounded-xl text-white sm:hidden"
         >
           Close
         </button>

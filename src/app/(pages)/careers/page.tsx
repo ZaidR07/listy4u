@@ -160,11 +160,11 @@ const CareersPage = () => {
   return (
     <>
       <nav
-        className="w-full h-[8vh] lg:h-[10vh] shadow-lg lg:shadow-2xl flex items-center gap-2 px-3 cursor-pointer bg-white sticky top-0 z-50"
+        className="w-full h-[8vh] landscape:h-[15vh] shadow-md flex items-center gap-2 px-3 cursor-pointer"
         onClick={() => router.push("/")}
       >
-        <span className="text-3xl lg:text-4xl font-extrabold text-[#f97316]">&larr;</span>
-        <span className="text-[#f97316] text-2xl lg:text-3xl mt-2">Back</span>
+       <span className="text-xl font-extrabold text-[#f97316] "><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></span>
+        <span className="text-[#f97316] text-2xl">Back</span>
       </nav>
 
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -178,7 +178,7 @@ const CareersPage = () => {
             <p className="text-xl lg:text-2xl opacity-95 max-w-3xl mx-auto leading-relaxed">
               Build Your Career with India's Leading Real Estate Platform
             </p>
-            <div className="mt-8 flex justify-center gap-4">
+            <div className="mt-8 flex flex-col md:flex-row justify-center gap-4">
               <div className="bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full">
                 <p className="text-sm font-semibold">🚀 Fast Growing</p>
               </div>

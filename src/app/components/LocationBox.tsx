@@ -1,22 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { setlocation } from "@/slices/locationSlice";
+import { useSelector, useDispatch } from "react-redux"; // ✅ Corrected import
 import axiosInstance from "@/lib/axios";
 
-const LocationBox = ({ locationstate, setlocation }) => {
+const LocationBox = () => {
   const [filter, setFilter] = useState("");
-  const [locations, setLocations] = useState<string[]>([]);
+  const [locations, setLocations] = useState<string[]>([]);const dispatch = useDispatch(); // ✅ useDispatch
+    const locationstate = useSelector((state: any) => state.location.location); // ✅ useSelector
 
-  const LocationIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 512 512"
-      width={16}
-      fill="#FF5D00"
-    >
-      <path d="M256 0c17.7 0 32 14.3 32 32v34.7C368.4 80.1 431.9 143.6 445.3 224H480c17.7 0 32 14.3 32 32s-14.3 32-32 32h-34.7C431.9 368.4 368.4 431.9 288 445.3V480c0 17.7-14.3 32-32 32s-32-14.3-32-32v-34.7C143.6 431.9 80.1 368.4 66.7 288H32c-17.7 0-32-14.3-32-32s14.3-32 32-32h34.7C80.1 143.6 143.6 80.1 224 66.7V32c0-17.7 14.3-32 32-32zm-128 256a128 128 0 1 0 256 0 128 128 0 1 0-256 0zm128-80a80 80 0 1 1 0 160 80 80 0 1 1 0-160z" />
-    </svg>
-  );
 
   useEffect(() => {
     const loadLocations = async () => {
@@ -40,15 +33,11 @@ const LocationBox = ({ locationstate, setlocation }) => {
     (loc || "").toLowerCase().includes(filter.toLowerCase())
   );
 
-  const handleSetLocation = (loc: string) => {
-    console.log("Set Location clicked:", loc, typeof setlocation);
-    setFilter("");
-    setlocation(loc);
-  };
+ 
 
   return (
     <div
-      className={`flex flex-col gap-4 w-[70%] lg:w-[20%] bg-white fixed z-[99999999999999999999999999999999] lg:top-[25vh] top-[45vh] left-[15%] lg:left-[40%] p-4 rounded-lg shadow-lg ${locationstate != "" ? "hidden" : "block"
+      className={`flex flex-col gap-4 w-[70%] lg:w-[20%] bg-white fixed z-[50] lg:top-[25vh] top-[45vh] left-[15%] lg:left-[40%] p-4 rounded-lg shadow-lg ${locationstate != "" ? "hidden" : "block"
         }`}
     >
       <div className="flex items-center gap-4">
@@ -69,7 +58,7 @@ const LocationBox = ({ locationstate, setlocation }) => {
             >
               <span className="text-gray-700">{loc}</span>
               <button
-                onClick={() => handleSetLocation(loc)}
+                onClick={() => dispatch(setlocation(loc))}
                 className="px-2 py-1 text-sm text-white bg-orange-500 rounded hover:bg-orange-600"
               >
                 Set Location

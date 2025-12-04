@@ -5,6 +5,9 @@ import Header from "@/app/components/Header";
 import axiosInstance from "@/lib/axios";
 import { priceconverter } from "@/utils/priceconverter";
 import { AngleLeft, AngleRight } from "@/app/Icons";
+import { getBrokerImageSrc, handleBrokerImageError } from "@/utils/brokerAvatar";
+import Register from "@/app/components/Register";
+import Cookies from "js-cookie";
 
 const Page = () => {
   const params = useSearchParams();
@@ -14,6 +17,7 @@ const Page = () => {
   const [error, setError] = useState("");
   const [broker, setBroker] = useState<any>(null);
   const [properties, setProperties] = useState<any[]>([]);
+  const [registeropen, setRegisterOpen] = useState(false);
 
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -25,6 +29,12 @@ const Page = () => {
   };
 
   useEffect(() => {
+    const token = Cookies.get('user') || Cookies.get('owner') || Cookies.get('broker');
+    if (!token) {
+      setRegisterOpen(true);
+      setLoading(false);
+      return;
+    }
     const fetchBroker = async () => {
       if (!id) {
         setError("Missing broker id");
@@ -44,6 +54,26 @@ const Page = () => {
     };
     fetchBroker();
   }, [id]);
+
+  useEffect(() => {
+    if (!registeropen) {
+      const token = Cookies.get('user') || Cookies.get('owner') || Cookies.get('broker');
+      if (token && !broker && id) {
+        (async () => {
+          try {
+            setLoading(true);
+            const res = await axiosInstance.get('/api/getsinglebroker', { params: { id } });
+            setBroker(res.data.payload);
+            setError("");
+          } catch (e: any) {
+            setError(e?.response?.data?.message || "Failed to load broker");
+          } finally {
+            setLoading(false);
+          }
+        })();
+      }
+    }
+  }, [registeropen]);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -79,7 +109,12 @@ const Page = () => {
         ) : broker ? (
           <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="col-span-1 bg-white rounded-2xl shadow-xl p-6 flex flex-col items-center text-center">
-              <img src={broker.image} alt={broker.brokername} className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-200" />
+              <img 
+                src={getBrokerImageSrc(broker?.image, broker?.brokername)} 
+                alt={broker?.brokername || "broker photo"} 
+                className="w-32 h-32 rounded-full object-cover ring-4 ring-orange-200" 
+                onError={(e) => handleBrokerImageError(e, broker?.brokername)}
+              />
               <h1 className="text-2xl font-bold mt-4">{broker.brokername}</h1>
               <p className="text-gray-500">{broker.companyname}</p>
               <div className="mt-4 w-full grid grid-cols-2 gap-3">
@@ -106,6 +141,24 @@ const Page = () => {
                 <div className="p-4 rounded-xl border md:col-span-2">
                   <span className="text-xs text-gray-500">Address</span>
                   <p className="text-lg">{broker.address}</p>
+                </div>
+                <div className="p-4 rounded-xl border md:col-span-2">
+                  <span className="text-xs text-gray-500">Service Locations</span>
+                  <p className="text-lg">
+                    {(() => {
+                      const sl = broker?.servicelocations;
+                      if (Array.isArray(sl)) return sl.join(", ");
+                      if (typeof sl === 'string') {
+                        try {
+                          const parsed = JSON.parse(sl);
+                          return Array.isArray(parsed) ? parsed.join(", ") : sl;
+                        } catch {
+                          return sl;
+                        }
+                      }
+                      return "-";
+                    })()}
+                  </p>
                 </div>
               </div>
 
@@ -173,6 +226,7 @@ const Page = () => {
           </div>
         )}
       </div>
+      <Register registeropen={registeropen} setRegisterOpen={setRegisterOpen} />
     </div>
   );
 };

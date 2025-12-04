@@ -9,11 +9,11 @@ const page = () => {
   return (
     <>
       <nav
-        className="w-full h-[8vh] shadow-lg flex items-center gap-2 px-3 cursor-pointer"
+        className="w-full h-[8vh] landscape:h-[15vh] shadow-md flex items-center gap-2 px-3 cursor-pointer"
         onClick={() => router.push("/")}
       >
-        <span className="text-3xl font-extrabold text-[#f97316]">&larr;</span>
-        <span className="text-[#f97316] text-2xl mt-2">Back</span>
+        <span className="text-xl font-extrabold text-[#f97316] "><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></span>
+        <span className="text-[#f97316] text-2xl">Back</span>
       </nav>
 
       {/* About Section */}

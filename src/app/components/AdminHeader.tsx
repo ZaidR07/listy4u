@@ -32,6 +32,13 @@ const nav = [
     subnav: ["View Vendors", "Add Vendors", "Update/Remove Vendors"],
   },
   {
+    icon: "home.svg",
+    name: "Blogs",
+    width: 40,
+    route: "viewblogs",
+    subnav: ["View Blogs", "Add Blog"],
+  },
+  {
     icon: "user.svg",
     name: "Feedbacks",
     width: 40,
@@ -48,6 +55,7 @@ const nav = [
     name: "Settings",
     width: 50,
     route: "variables",
+    subnav: ["Variables", "Company"],
   },
 ];
 

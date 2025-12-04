@@ -58,9 +58,18 @@ const Searchsection = ({ buildings }) => {
   // Filter suggestions based on searchText
   useEffect(() => {
     if (searchText.trim() && isFocused) {
-      const filtered = buildings.filter((building) =>
-        building.toLowerCase().includes(searchText.toLowerCase())
-      );
+      const filtered = buildings.filter((building) => {
+        const searchLower = searchText.toLowerCase();
+        // Handle if building is an object with buildingname property
+        if (typeof building === 'object' && building.buildingname) {
+          return building.buildingname.toLowerCase().includes(searchLower);
+        }
+        // Handle if building is a string
+        if (typeof building === 'string') {
+          return building.toLowerCase().includes(searchLower);
+        }
+        return false;
+      });
       setSuggestions(filtered);
       setShowSuggestions(filtered.length > 0);
       setSelectedSuggestionIndex(-1); // Reset selection when suggestions change
@@ -95,7 +104,10 @@ const Searchsection = ({ buildings }) => {
 
   // Handle selecting a suggestion
   const handleSuggestionClick = (suggestion) => {
-    setSearchText(suggestion);
+    const searchText = typeof suggestion === 'object' && suggestion.buildingname 
+      ? suggestion.buildingname 
+      : suggestion;
+    setSearchText(searchText);
     setShowSuggestions(false);
     setIsFocused(false);
     inputRef.current.focus();
@@ -133,10 +145,10 @@ const Searchsection = ({ buildings }) => {
   };
 
   return (
-    <div className=" w-[85%] lg:w-[60%] lg:ml-[20%] bg-white shadow-xl px-6 py-2 lg:py-4 rounded-xl -mt-[3vh] lg:-mt-[18vh] z-[9999999] absolute ml-[6.5%] flex items-center gap-2">
+    <div className=" w-[85%] lg:w-[60%] lg:ml-[20%] bg-white shadow-xl px-6 py-2 md:py-4 rounded-xl -mt-[3vh] lg:-mt-[18vh] z-[49] absolute ml-[6.5%] flex items-center gap-2">
       {/* Dropdown for Property Type */}
       <select
-        className="p-1 lg:p-2 border lg:border-2 rounded-md text-gray-600 bg-white text-xs lg:text-base"
+        className="p-1 md:p-2 border lg:border-2 rounded-md text-gray-600 bg-white text-xs md:text-lg lg:text-base"
         value={propertyType}
         onChange={(e) => setPropertyType(e.target.value)}
       >
@@ -149,7 +161,7 @@ const Searchsection = ({ buildings }) => {
       <div className="relative flex-1">
         <motion.input
           ref={inputRef}
-          className="bg-transparent outline-none text-sm lg:text-lg w-full lg:pl-6 text-gray-600"
+          className="bg-transparent outline-none text-sm md:text-base lg:text-lg w-full md:pl-6 text-gray-600"
           type="text"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
@@ -171,17 +183,24 @@ const Searchsection = ({ buildings }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            {suggestions.map((suggestion, index) => (
-              <div
-                key={suggestion}
-                className={`px-4 py-2 text-sm lg:text-base text-gray-600 cursor-pointer hover:bg-gray-100 ${
-                  index === selectedSuggestionIndex ? "bg-gray-100" : ""
-                }`}
-                onMouseDown={() => handleSuggestionClick(suggestion)} // Use onMouseDown to handle click before blur
-              >
-                {suggestion}
-              </div>
-            ))}
+            {suggestions.map((suggestion, index) => {
+              const displayText = typeof suggestion === 'object' && suggestion.buildingname 
+                ? suggestion.buildingname 
+                : suggestion;
+              const key = typeof suggestion === 'object' ? suggestion._id || index : suggestion;
+              
+              return (
+                <div
+                  key={key}
+                  className={`px-4 py-2 text-sm lg:text-base text-gray-600 cursor-pointer hover:bg-gray-100 ${
+                    index === selectedSuggestionIndex ? "bg-gray-100" : ""
+                  }`}
+                  onMouseDown={() => handleSuggestionClick(suggestion)} // Use onMouseDown to handle click before blur
+                >
+                  {displayText}
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </div>
@@ -197,7 +216,7 @@ const Searchsection = ({ buildings }) => {
       {/* Search Button */}
       <button
         onClick={handleSearch}
-        className="px-2 lg:px-6 lg:py-2 py-1 bg-[#FF5D00] rounded-md text-xs lg:text-base text-white"
+        className="px-2 lg:px-6 lg:py-2 py-1 bg-[#FF5D00] rounded-md text-xs md:text-lg md:py-2 md:px-4 lg:text-base text-white"
       >
         Search
       </button>

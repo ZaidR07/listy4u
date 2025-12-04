@@ -5,6 +5,7 @@ import { ReduxProvider } from "./Provider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
+import LocationBox from "./components/LocationBox";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,6 +48,7 @@ export default function RootLayout({
             pauseOnHover
             theme="light"
           />
+          <LocationBox/>
           </ReduxProvider>
         </ReactQueryProvider>
       </body>

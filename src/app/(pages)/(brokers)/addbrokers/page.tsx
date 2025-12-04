@@ -1,6 +1,6 @@
 "use client";
 import AdminHeader from "@/app/components/AdminHeader";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {  toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axiosInstance from "@/lib/axios";
@@ -14,12 +14,49 @@ const Page = () => {
     mobile2: "",
     address: "",
     photo: null,
+    servicelocations: [],
   });
 
   const [sidebaropen, setSidebarOpen] = useState(false);
+  // Location dropdown states
+  const [locationList, setLocationList] = useState<string[]>([]);
+  const [locationSearch, setLocationSearch] = useState("");
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+
+  // Fetch location list
+  useEffect(() => {
+    const fetchLocationList = async () => {
+      try {
+        const response = await axiosInstance.get('/api/getspecificvariable?category=locationlist');
+        if (response.data?.payload) {
+          setLocationList(response.data.payload);
+        }
+      } catch (error) {
+        console.error("Error fetching location list:", error);
+      }
+    };
+    fetchLocationList();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (showLocationDropdown && !event.target.closest('.location-dropdown-container')) {
+        setShowLocationDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showLocationDropdown]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "mobile1" || name === "mobile2") {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      setFormdata((prevData) => ({ ...prevData, [name]: digits }));
+      return;
+    }
     setFormdata((prevData) => ({
       ...prevData,
       [name]: value,
@@ -36,9 +73,22 @@ const Page = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (formdata.mobile1.length !== 10) {
+      toast.error("Enter 10-digit Mobile Number 1");
+      return;
+    }
+    if (formdata.mobile2 && formdata.mobile2.length !== 10) {
+      toast.error("Mobile Number 2 must be 10 digits");
+      return;
+    }
+
     const formDataToSend = new FormData();
     Object.keys(formdata).forEach((key) => {
-      if (formdata[key]) {
+      if (key === 'servicelocations') {
+        if (Array.isArray(formdata[key]) && formdata[key].length > 0) {
+          formDataToSend.append(key, JSON.stringify(formdata[key]));
+        }
+      } else if (formdata[key]) {
         formDataToSend.append(key, formdata[key]);
       }
     });
@@ -67,7 +117,9 @@ const Page = () => {
         mobile2: "",
         address: "",
         photo: null,
+        servicelocations: [],
       });
+      setSelectedLocations([]);
       
       // Reset file input
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -136,6 +188,8 @@ const Page = () => {
                 onChange={handleChange}
                 type="tel"
                 className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                inputMode="numeric"
+                maxLength={10}
                 required
               />
             </div>
@@ -147,6 +201,8 @@ const Page = () => {
                 onChange={handleChange}
                 type="tel"
                 className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                inputMode="numeric"
+                maxLength={10}
               />
             </div>
             <div className="md:col-span-2">
@@ -159,6 +215,74 @@ const Page = () => {
                 className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
                 required
               />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">Service Locations <span className="text-red-700">*</span></label>
+              <div className="relative location-dropdown-container">
+                {/* Selected locations display */}
+                <div
+                  className="min-h-[42px] border border-gray-300 rounded-xl p-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition cursor-text"
+                  onClick={() => setShowLocationDropdown(true)}
+                >
+                  {selectedLocations.length === 0 ? (
+                    <span className="text-gray-400">Click to add service locations...</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedLocations.map((loc, idx) => (
+                        <span key={idx} className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-sm flex items-center gap-1">
+                          {loc}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updated = selectedLocations.filter((l) => l !== loc);
+                              setSelectedLocations(updated);
+                              setFormdata((prev) => ({ ...prev, servicelocations: updated }));
+                            }}
+                            className="text-orange-500 hover:text-orange-700 font-bold"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {/* Dropdown */}
+                {showLocationDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <input
+                      type="text"
+                      placeholder="Search locations..."
+                      value={locationSearch}
+                      onChange={(e) => setLocationSearch(e.target.value)}
+                      className="w-full px-3 py-2 border-b border-gray-200 outline-none"
+                      autoFocus
+                    />
+                    {locationList.filter(l => l.toLowerCase().includes(locationSearch.toLowerCase()) && !selectedLocations.includes(l)).length === 0 ? (
+                      <div className="px-3 py-2 text-gray-500 text-sm">No locations found</div>
+                    ) : (
+                      locationList
+                        .filter(l => l.toLowerCase().includes(locationSearch.toLowerCase()) && !selectedLocations.includes(l))
+                        .map((l, index) => (
+                          <div
+                            key={index}
+                            onClick={() => {
+                              const updated = [...selectedLocations, l];
+                              setSelectedLocations(updated);
+                              setFormdata((prev) => ({ ...prev, servicelocations: updated }));
+                              setLocationSearch("");
+                              setShowLocationDropdown(false);
+                            }}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                          >
+                            {l}
+                          </div>
+                        ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Broker Photo</label>

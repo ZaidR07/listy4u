@@ -4,6 +4,8 @@ import Header from "@/app/components/Header";
 import { useState, useCallback, useEffect } from "react";
 import axiosInstance from "@/lib/axios";
 import { useRouter } from "next/navigation";
+import { getBrokerImageSrc, handleBrokerImageError } from "@/utils/brokerAvatar";
+import { useSelector } from "react-redux";
 
 const Page = () => {
   const [location, setLocation] = useState("");
@@ -12,6 +14,7 @@ const Page = () => {
   const [filteredBrokers, setFilteredBrokers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const locationstate = useSelector((state: any) => state.location.location);
 
   const searchplaceholders = [
     "Search by pincode ...",
@@ -42,6 +45,10 @@ const Page = () => {
   useEffect(() => {
     loaddata();
   }, [loaddata]);
+
+  useEffect(() => {
+    handleSearch();
+  }, [locationstate, brokerlist]);
 
   // Jaro-Winkler Similarity function
   const jaroWinkler = (s1, s2) => {
@@ -76,18 +83,42 @@ const Page = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const matchesReduxLocation = (broker: any, loc: string) => {
+    if (!loc) return true;
+    const target = loc.toLowerCase();
+    const sl = broker?.servicelocations;
+    let arr: string[] = [];
+    if (Array.isArray(sl)) {
+      arr = sl as string[];
+    } else if (typeof sl === 'string') {
+      try {
+        const parsed = JSON.parse(sl);
+        arr = Array.isArray(parsed) ? parsed : String(sl).split(',').map((s) => s.trim());
+      } catch {
+        arr = String(sl).split(',').map((s) => s.trim());
+      }
+    }
+    if (arr.length > 0 && arr.some((s) => (s || '').toLowerCase().includes(target))) return true;
+    // Fallback to single location/address/pincode fields
+    if ((broker.location || '').toLowerCase().includes(target)) return true;
+    if ((broker.address || '').toLowerCase().includes(target)) return true;
+    if (broker.pincode?.toString().includes(target)) return true;
+    return false;
+  };
+
   const handleSearch = () => {
+    const base = locationstate ? brokerlist.filter((b: any) => matchesReduxLocation(b, locationstate)) : brokerlist;
     const keyword = location.toLowerCase().trim();
     if (!keyword) {
-      setFilteredBrokers(brokerlist);
+      setFilteredBrokers(base);
       return;
     }
 
-    const filtered = brokerlist.filter((broker) => {
+    const filtered = base.filter((broker) => {
       return (
         broker.pincode?.toString().includes(keyword) ||
-        isSimilar(keyword, broker.location) ||
-        isSimilar(keyword, broker.brokername)
+        isSimilar(keyword, broker.location || '') ||
+        isSimilar(keyword, broker.brokername || '')
       );
     });
 
@@ -97,7 +128,7 @@ const Page = () => {
   return (
     <div className="bg-[#fef6f0] min-h-[100vh] mt-[8vh] lg:mt-[15vh]">
       <Header />
-      <section className="pt-[2vh] px-[5%] h-[8vh] rounded-lg flex gap-[2%]">
+      <section className="pt-[2vh] px-[5%] h-[8vh] lg:h-[10vh] rounded-lg flex gap-[2%]">
         <input
           className="w-[75%] lg:w-[86%] h-full shadow-lg rounded-lg border-2 px-4"
           type="search"
@@ -114,7 +145,8 @@ const Page = () => {
         <button
           onClick={() => {
             setLocation("");
-            setFilteredBrokers(brokerlist);
+            const base = locationstate ? brokerlist.filter((b: any) => matchesReduxLocation(b, locationstate)) : brokerlist;
+            setFilteredBrokers(base);
           }}
           className="w-[36%] lg:w-[18%] bg-blue-500 text-white py-2 rounded-lg"
         >
@@ -134,9 +166,10 @@ const Page = () => {
             >
               <div className="gap-1 flex w-[100%] flex-col items-center">
                 <img
-                  src={item.image}
-                  className="w-[100px] h-[100px] rounded-full ring-2"
-                  alt="broker-image"
+                  src={getBrokerImageSrc(item?.image, item?.brokername)}
+                  className="w-[100px] h-[100px] object-cover rounded-full ring-2"
+                  alt={item?.brokername ? `${item.brokername} photo` : "broker photo"}
+                  onError={(e) => handleBrokerImageError(e, item?.brokername)}
                 />
                 <span className="text-lg">{item.brokername}</span>
                 <span className="text-sm text-gray-400">

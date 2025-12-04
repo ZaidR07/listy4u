@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Cookies from 'js-cookie';
+import { useSelector } from "react-redux";
 
 const Page = () => {
   const [vendorlist, setVendorlist] = useState([]);
@@ -14,6 +15,7 @@ const Page = () => {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const locationstate = useSelector((state: any) => state.location.location);
 
   const router = useRouter();
 
@@ -75,7 +77,6 @@ const Page = () => {
       });
       const data = response.data.payload;
       setVendorlist(data);
-      setFilteredVendors(data);
     } catch (error) {
       console.error("Error loading vendors", error);
     } finally {
@@ -87,15 +88,37 @@ const Page = () => {
     loaddata();
   }, [loaddata]);
 
+  useEffect(() => {
+    handleSearch();
+  }, [locationstate, vendorlist]);
+
   // Search/filter function
+  const matchesLocation = (vendor: any, location: string) => {
+    if (!location) return true;
+    const sl = vendor?.servicelocations;
+    if (!sl) return false;
+    let arr: any[] = [];
+    if (Array.isArray(sl)) {
+      arr = sl;
+    } else if (typeof sl === 'string') {
+      try {
+        const parsed = JSON.parse(sl);
+        arr = Array.isArray(parsed) ? parsed : String(sl).split(',').map((s) => s.trim());
+      } catch {
+        arr = String(sl).split(',').map((s) => s.trim());
+      }
+    }
+    return arr.some((loc) => (loc || '').toLowerCase().includes(location.toLowerCase()));
+  };
   const handleSearch = () => {
+    const base = locationstate ? vendorlist.filter((v: any) => matchesLocation(v, locationstate)) : vendorlist;
     if (!searchQuery.trim()) {
-      setFilteredVendors(vendorlist);
+      setFilteredVendors(base);
       return;
     }
 
     const query = searchQuery.toLowerCase().trim();
-    const filtered = vendorlist.filter((vendor: any) => {
+    const filtered = base.filter((vendor: any) => {
       const vendorName = vendor.vendorname?.toLowerCase() || '';
       const address = vendor.address?.toLowerCase() || '';
       
@@ -113,22 +136,22 @@ const Page = () => {
   };
 
   const handleVendorClick = async (vendorId: string) => {
-    console.log('Vendor clicked:', vendorId);
-    console.log('User email for lead:', userEmail);
+    // console.log('Vendor clicked:', vendorId);
+    // console.log('User email for lead:', userEmail);
     
     // Generate lead if user is logged in
     if (userEmail) {
       try {
-        console.log('Sending lead generation request...');
+        // console.log('Sending lead generation request...');
         const response = await axiosInstance.post('/api/generatevendorlead', {
           vendor_id: vendorId,
           user_email: userEmail,
         });
-        console.log('✅ Vendor lead generated successfully:', response.data);
-        toast.success('Lead sent to vendor! 🎉', {
-          position: 'top-right',
-          autoClose: 2000,
-        });
+        // console.log('✅ Vendor lead generated successfully:', response.data);
+        // toast.success('Lead sent to vendor! 🎉', {
+        //   position: 'top-right',
+        //   autoClose: 2000,
+        // });
       } catch (error: any) {
         console.error('❌ Error generating vendor lead:', error);
         console.error('Error details:', error?.response?.data);
@@ -210,7 +233,8 @@ const Page = () => {
               <button
                 onClick={() => {
                   setSearchQuery('');
-                  setFilteredVendors(vendorlist);
+                  const base = locationstate ? vendorlist.filter((v: any) => matchesLocation(v, locationstate)) : vendorlist;
+                  setFilteredVendors(base);
                 }}
                 className="mt-4 text-orange-500 hover:text-orange-600 underline"
               >

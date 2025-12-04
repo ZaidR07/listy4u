@@ -34,6 +34,23 @@ const Page = () => {
       width: "150px",
     },
     { name: "Company Name", selector: (row) => row.companyname, sortable: true, width: "150px" },
+    { 
+      name: "Service Locations", 
+      selector: (row) => {
+        if (row.servicelocations && Array.isArray(row.servicelocations)) {
+          return row.servicelocations.join(", ");
+        } else if (typeof row.servicelocations === 'string') {
+          try {
+            const parsed = JSON.parse(row.servicelocations);
+            return Array.isArray(parsed) ? parsed.join(", ") : row.servicelocations;
+          } catch {
+            return row.servicelocations;
+          }
+        }
+        return "-";
+      }, 
+      width: "200px",
+    },
     { name: "Primary Mobile", selector: (row) => row.mobile1, width: "130px" },
     { 
       name: "Action", 
@@ -179,6 +196,26 @@ const Page = () => {
                   <span className="text-xs text-gray-500">Address</span>
                   <p className="text-lg font-medium">{selectedVendor.address}</p>
                 </div>
+                {selectedVendor.servicelocations && (
+                  <div className="p-4 rounded-xl border md:col-span-2">
+                    <span className="text-xs text-gray-500">Service Locations</span>
+                    <p className="text-lg font-medium">
+                      {(() => {
+                        if (Array.isArray(selectedVendor.servicelocations)) {
+                          return selectedVendor.servicelocations.join(", ");
+                        } else if (typeof selectedVendor.servicelocations === 'string') {
+                          try {
+                            const parsed = JSON.parse(selectedVendor.servicelocations);
+                            return Array.isArray(parsed) ? parsed.join(", ") : selectedVendor.servicelocations;
+                          } catch {
+                            return selectedVendor.servicelocations;
+                          }
+                        }
+                        return "-";
+                      })()}
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="mt-6 flex gap-3">
                 <a 
