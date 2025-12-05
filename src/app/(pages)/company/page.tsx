@@ -61,9 +61,9 @@ const CompanyPage = () => {
 
   const handleHeroFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setHeroFiles(files as File[]);
+    setHeroFiles((prev) => [...prev, ...(files as File[])]);
     const previews = files.map((file) => URL.createObjectURL(file));
-    setHeroPreview(previews);
+    setHeroPreview((prev) => [...prev, ...previews]);
   };
 
   const handleUploadBanners = async (e: React.FormEvent) => {
@@ -80,10 +80,25 @@ const CompanyPage = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
       const payload = res?.data?.payload || [];
-      setHeroPreview(payload);
+      setHeroPreview(Array.isArray(payload) ? payload : []);
+      setHeroFiles([]);
       toast.success(res?.data?.message || "Hero banners updated");
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "Failed to upload banners");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBanner = async (src: string) => {
+    try {
+      setLoading(true);
+      const res = await axiosInstance.post("/api/company/delete-hero-banner", { url: src });
+      const payload = res?.data?.payload || [];
+      setHeroPreview(Array.isArray(payload) ? payload : []);
+      toast.success(res?.data?.message || "Banner deleted");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to delete banner");
     } finally {
       setLoading(false);
     }
@@ -128,6 +143,13 @@ const CompanyPage = () => {
                   <div key={idx} className="relative w-full h-24 md:h-32 rounded-md overflow-hidden bg-gray-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={src} alt={`Banner ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteBanner(src)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/80 text-red-600 flex items-center justify-center text-xs font-bold shadow-sm hover:bg-white"
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>

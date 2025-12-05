@@ -2,7 +2,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense , useRef } from "react";
 import axiosInstance from "@/lib/axios";
-import { House, Ruler, IndianRupee, Lock } from "lucide-react";
+import { House, Ruler, IndianRupee } from "lucide-react";
 import { priceconverter } from "@/utils/priceconverter";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
@@ -104,6 +104,7 @@ const PropertyDetails = () => {
     type: "",
     for: "",
     property_id: null,
+    createdAt: "",
   });
   const [loading, setLoading] = useState(true);
   const [imageViewer, setImageViewer] = useState({ open: false, index: 0 });
@@ -399,6 +400,39 @@ const PropertyDetails = () => {
   const statCount = 2 + (hasDeposit ? 1 : 0) + (hasBedroomsStat ? 1 : 0); // Price + Area + optional Deposit + optional Bedrooms
   const gridColsClass =
     statCount >= 4 ? "lg:grid-cols-4" : statCount === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2";
+
+  const getPostedByLabel = (rawType) => {
+    if (!rawType) return "";
+    const type = String(rawType).toLowerCase();
+    if (type === "broker") return "Dealer";
+    if (type === "owner") return "Owner";
+    if (type === "user") return "User";
+    return rawType;
+  };
+
+  const getTimeAgo = (createdAt) => {
+    if (!createdAt) return "";
+    const created = new Date(createdAt);
+    if (isNaN(created.getTime())) return "";
+
+    const diffMs = Date.now() - created.getTime();
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days >= 7) {
+      const weeks = Math.floor(days / 7);
+      return `${weeks}w ago`;
+    }
+    if (days >= 1) return `${days}d ago`;
+    if (hours >= 1) return `${hours}h ago`;
+    if (minutes >= 1) return `${minutes}m ago`;
+    return "Just now";
+  };
+
+  const postedByLabel = getPostedByLabel(property.postedbytype);
+  const postedTimeAgo = getTimeAgo(property.createdAt);
 
   return (
     <div className="bg-gradient-to-b from-orange-50 via-white to-orange-50 min-h-screen">
@@ -714,44 +748,83 @@ const PropertyDetails = () => {
             </div>
 
             {/* Contact Controls (Credit-gated) */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              {showContacts ? (
-                <>
-                  <a
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 px-6 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-3 text-base md:text-lg font-semibold"
-                    href={`tel:${poster?.mobile1 || ""}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <PhoneIcon />
-                    {poster?.mobile1 || "NA"}
-                  </a>
-                  <a
-                    href={`https://wa.me/${poster?.mobile1 || ""}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 px-6 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-3 text-base md:text-lg font-semibold"
-                  >
-                    <WhatsAppIcon />
-                    WhatsApp
-                  </a>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleViewContacts}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-4 px-6 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl font-semibold"
-                  >
-                    View Phone Number
-                  </button>
-                  <button
-                    onClick={handleViewContacts}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white py-4 px-6 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl font-semibold"
-                  >
-                    View WhatsApp
-                  </button>
-                </>
-              )}
+            <div className="mt-6 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white rounded-2xl shadow-md px-4 py-3">
+                <div className="flex flex-col text-sm">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                    {postedByLabel && (
+                      <span className="font-medium">
+                        {postedByLabel}
+                      </span>
+                    )}
+                    {postedByLabel && postedTimeAgo && (
+                      <span className="text-gray-400">·</span>
+                    )}
+                    {postedTimeAgo && (
+                      <span className="text-gray-400">
+                        {postedTimeAgo}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-sm sm:text-base font-semibold text-gray-900 flex items-center gap-2">
+                    {poster?.brokername || "NA"}
+                    {String(property.postedbytype || "").toLowerCase() === "broker" && (
+                      <span className="inline-flex items-center justify-center rounded-full bg-blue-100 p-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="#1e40af"
+                          className="w-4 h-4"
+                          aria-hidden="true"
+                        >
+                          <path d="M10.007 2.10377C8.60544 1.65006 7.08181 2.28116 6.41156 3.59306L5.60578 5.17023C5.51004 5.35763 5.35763 5.51004 5.17023 5.60578L3.59306 6.41156C2.28116 7.08181 1.65006 8.60544 2.10377 10.007L2.64923 11.692C2.71404 11.8922 2.71404 12.1078 2.64923 12.308L2.10377 13.993C1.65006 15.3946 2.28116 16.9182 3.59306 17.5885L5.17023 18.3942C5.35763 18.49 5.51004 18.6424 5.60578 18.8298L6.41156 20.407C7.08181 21.7189 8.60544 22.35 10.007 21.8963L11.692 21.3508C11.8922 21.286 12.1078 21.286 12.308 21.3508L13.993 21.8963C15.3946 22.35 16.9182 21.7189 17.5885 20.407L18.3942 18.8298C18.49 18.6424 18.6424 18.49 18.8298 18.3942L20.407 17.5885C21.7189 16.9182 22.35 15.3946 21.8963 13.993L21.3508 12.308C21.286 12.1078 21.286 11.8922 21.3508 11.692L21.8963 10.007C22.35 8.60544 21.7189 7.08181 20.407 6.41156L18.8298 5.60578C18.6424 5.51004 18.49 5.35763 18.3942 5.17023L17.5885 3.59306C16.9182 2.28116 15.3946 1.65006 13.993 2.10377L12.308 2.64923C12.1078 2.71403 11.8922 2.71404 11.692 2.64923L10.007 2.10377ZM6.75977 11.7573L8.17399 10.343L11.0024 13.1715L16.6593 7.51465L18.0735 8.92886L11.0024 15.9999L6.75977 11.7573Z" />
+                        </svg>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {showContacts ? (
+                    <>
+                      <a
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 text-sm sm:text-base font-medium shadow-md transition-all"
+                        href={`tel:${poster?.mobile1 || ""}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <PhoneIcon />
+                        <span>{poster?.mobile1 || "NA"}</span>
+                      </a>
+                      <a
+                        href={`https://wa.me/${poster?.mobile1 || ""}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 text-sm sm:text-base font-medium shadow-md transition-all"
+                      >
+                        <WhatsAppIcon />
+                        <span>WhatsApp</span>
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleViewContacts}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 text-sm sm:text-base font-medium shadow-md transition-all"
+                      >
+                        <PhoneIcon />
+                        <span>View Phone Number</span>
+                      </button>
+                      <button
+                        onClick={handleViewContacts}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 text-sm sm:text-base font-medium shadow-md transition-all"
+                      >
+                        <WhatsAppIcon />
+                        <span>View WhatsApp</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* More Properties Section */}

@@ -6,9 +6,6 @@ import Image from "next/image";
 import axiosInstance from "@/lib/axios";
 
 const fallbackBanners = [
-  "/1740719627292.png",
-  "/1740719627309.png",
-  "/1740719627319.jpeg",
   "/banner4.png",
 ];
 
@@ -40,7 +37,7 @@ const CarouselComponent = () => {
         const res = await axiosInstance.get("/api/company/settings");
         const payload = res?.data?.payload || {};
         const heroBanners = Array.isArray(payload.heroBanners)
-          ? payload.heroBanners
+          ? payload.heroBanners.slice().reverse()
           : [];
         setBanners(heroBanners);
       } catch {
